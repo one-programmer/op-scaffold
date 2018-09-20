@@ -1,0 +1,161 @@
+<template>
+  <el-card>
+    <el-form :model="form" label-width="80px">
+      <%_ fields.forEach(function(field) { _%>
+        <%_ if (field.write) { _%>
+          <%_ if (field.type === 'datetime') { _%>
+          <el-form-item label="<%= field.name %>">
+            <el-date-picker v-model="form.<%= field.key %>" type="datetime" placeholder="选择日期时间">
+            </el-date-picker>
+          </el-form-item>
+          <%_ } else if (field.choices && field.choices.length > 0) { _%>
+          <el-form-item label="<%= field.name %>">
+            <el-select v-model="form.<%= field.key %>" placeholder="请选择<%= field.name %>">
+              <%_ field.choices.forEach(function(choice) { _%>
+              <el-option label="<%= choice[1] %>" :value="<%= choice[0] %>"></el-option>
+              <%_ }) _%>
+            </el-select>
+          </el-form-item>
+          <%_ } else if (field.type === 'number') { _%>
+          <el-form-item label="<%= field.name %>">
+            <el-input-number v-model="form.<%= field.key %>" ></el-input-number>
+          </el-form-item>
+          <%_ } else if (field.type === 'boolean') { _%>
+          <el-form-item label="<%= field.name %>">
+            <el-switch v-model="form.<%= field.key %>"></el-switch>
+          </el-form-item>
+          <%_ } else if (field.type === 'image') { _%>
+          <el-form-item label="<%= field.name %>">
+              <el-upload
+                class="avatar-uploader"
+                action="/api/upload/"
+                :show-file-list="false"
+                :on-success="<%= field.key %>Upload">
+                <img v-if="form.<%= field.key %>" :src="form.<%= field.key %>" class="avatar">
+                <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+              </el-upload>
+          </el-form-item>
+          <%_ } else if (field.type === 'file') { _%>
+          <el-form-item label="<%= field.name %>">
+            <el-upload
+              class="upload-demo"
+              drag
+              action="//up.qbox.me/"
+              :limit="1"
+              :data="<%= field.key %>Data"
+              :file-list="<%= field.key %>FileList"
+              :before-upload="<%= field.key %>HandleBeforeUpload"
+              :on-exceed="<%= field.key %>Exceed"
+              :on-success="<%= field.key %>UploadFile">
+              <i class="el-icon-upload"></i>
+              <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+            </el-upload>
+          </el-form-item>
+          <%_ } else { _%>
+          <el-form-item label="<%= field.name %>">
+            <el-input v-model="form.<%= field.key %>"></el-input>
+          </el-form-item>
+          <%_ } _%>
+        <%_ } _%>
+      <%_ }) _%>
+      <el-form-item>
+        <el-button type="primary" @click="onSubmit">保存</el-button>
+        <el-button>取消</el-button>
+      </el-form-item>
+    </el-form>
+  </el-card>
+</template>
+<script>
+export default {
+  data () {
+    return {
+      id: this.$route.params.id,
+      apiPath: '<%= apiPath %>',
+      form: {
+        <%_ fields.forEach(function(field) { _%>
+        <%_ if (field.write) { _%>
+        <%= field.key %>: '',
+        <%_ } _%>
+        <%_ }) _%>
+      },
+      <%_ fields.forEach(function(field) { _%>
+      <%_ if (field.type === 'file') { _%>
+      <%= field.key %>Data: {},
+      <%= field.key %>FileList: []
+      <%_ } _%>
+      <%_ }) _%>
+    }
+  },
+  created () {
+    this.initForm()
+  },
+  methods: {
+    async initForm () {
+      console.log('fetch detail', this.id)
+      const result = await this.$axios({
+        method: 'get',
+        url: `${this.apiPath}${this.id}/`
+      })
+      this.form = result
+      <%_ fields.forEach(function(field) { _%>
+      <%_ if (field.type === 'file') { _%>
+      this.<%= field.key %>FileList = [ { name: this.form.<%= field.key %>, url: this.form.<%= field.key %> } ]
+      <%_ } _%>
+      <%_ }) _%>
+    },
+    async onSubmit () {
+      console.log('submit!')
+      await this.$axios({
+        method: 'put',
+        url: `${this.apiPath}${this.id}/`,
+        data: this.form
+      })
+      this.$notify({
+        title: '成功',
+        message: `保存成功`,
+        type: 'success'
+      })
+      this.$router.push({ path: '<%= templateData.find(template => template.type === "list").path %>' })
+    },
+    handleUploadSuccess (res, file) {
+      console.log('handleUploadSuccess', res, file)
+      this.form.image = res.results.url
+    },
+    <%_ fields.forEach(function(field) { _%> 
+    <%_ if (field.type === 'image') { _%>
+    <%= field.key %>Upload (res, file) {
+      console.log('handleUploadSuccess', res, file)
+      this.form.<%= field.key %> = res.results.url
+    },
+    <%_ } else if (field.type === 'file') { _%> 
+    <%= field.key %>UploadFile (response, file, fileList) {
+      console.log('<%= field.key %>UploadFile', response, file, fileList)
+      this.form.<%= field.key %> = this.<%= field.key %>Data.url + response.key
+    },
+    async <%= field.key %>HandleBeforeUpload (file) {
+      const result = await this.$axios({
+        method: 'post',
+        url: '/api/qiniu_token/',
+        data: { name: file.name }
+      })
+      console.log('<%= field.key %>HandleBeforeUpload', result)
+      this.<%= field.key %>Data = result.results
+    },
+    <%= field.key %>Exceed () {
+      this.$notify({
+        title: '失败 ',
+        message: '已超过上传数量上限，如需修改，请删除原文件',
+        type: 'error'
+      })
+    },
+    <%_ } _%> 
+    <%_ }) _%> 
+  }
+}
+</script>
+<style>
+.avatar {
+  width: 50px;
+  display: block;
+}
+</style>

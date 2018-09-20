@@ -1,0 +1,175 @@
+<template>
+  <d2-container>
+    <div class="d2-mt d2-mr">
+      <el-card v-if="config.searchFlag">
+        <el-input placeholder="请输入内容" v-model="search" class="input-with-select">
+          <el-button slot="append" icon="el-icon-search"></el-button>
+        </el-input>
+      </el-card>
+      <el-card>
+        <div v-if="batchOptions.length > 0">
+          <el-form :inline="true" class="demo-form-inline">
+            <el-form-item label="批量">
+              <el-select v-model="batchOption" placeholder="请选择">
+                <el-option
+                  v-for="item in batchOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="warning" @click="doBatchOption">执行</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+
+        <el-table
+          stripe
+          :data="dataList"
+          @selection-change="handleSelectionChange"
+          style="width: 100%">
+          <el-table-column
+            v-if="batchOptions.length > 0"
+            type="selection"
+            width="55">
+          </el-table-column>
+          <%_ fields.forEach(function(field){ _%>
+            <%_ if (field.read) { _%>
+            <%_ if (field.type === 'boolean') { _%>
+            <el-table-column label="<%= field.name %>">
+              <template slot-scope="scope">
+                <d2-icon :name="scope.row.<%= field.key %> ? 'check': 'close'"/>
+              </template>
+            </el-table-column>
+            <%_ } else if (field.type === 'image') { _%>
+              <el-table-column label="<%= field.name %>">
+                <template slot-scope="scope">
+                  <img :src="scope.row.<%= field.key %>" style="width: 50px;">
+                </template>
+              </el-table-column>
+            <%_ } else if (field.type === 'file') { _%>
+              <el-table-column label="<%= field.name %>">
+                <template slot-scope="scope">
+                  <a v-if="scope.row.<%= field.key %>" :href="scope.row.<%= field.key %>" target="_blank">点击下载</a>
+                </template>
+              </el-table-column>
+            <%_ } else { _%>
+            <el-table-column
+              prop="<%= field.key %>"
+              label="<%= field.name %>">
+            </el-table-column>
+            <%_ } _%>
+            <%_ } _%>
+          <%_ }) _%>
+          <el-table-column label="操作">
+            <template slot-scope="scope">
+              <el-button
+                v-if="config.editFlag"
+                size="mini"
+                @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+              <el-button
+                v-if="config.deleteFlag"
+                size="mini"
+                type="danger"
+                @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          background
+          layout="prev, pager, next"
+          :current-page.sync="page"
+          :page-size="pageSize"
+          @current-change="handleCurrentChange"
+          :total="total">
+        </el-pagination>
+      </el-card>
+    </div>
+
+  </d2-container>
+</template>
+<script>
+export default {
+  data () {
+    return {
+      config: { searchFlag: false, editFlag: true, deleteFlag: true },
+      dataList: [],
+      total: 0,
+      pageSize: 20,
+      page: 1,
+      apiPath: '<%= apiPath %>',
+      batchOptions: [
+        // 通过Banner
+        // { label: '删除', value: 'delete' }
+      ],
+      batchOption: '',
+      multipleSelection: [],
+      search: ''
+    }
+  },
+  created () {
+    this.getList()
+  },
+  methods: {
+    getList (page) {
+      this.$axios({
+        method: 'get',
+        url: this.apiPath,
+        params: {
+          page: page || this.page,
+          pageSize: this.pageSize
+        }
+      }).then(result => {
+        console.log('get list result', result)
+        this.dataList = result.results
+        this.total = result.count
+      })
+    },
+    doBatchOption () {
+      console.log('批量执行', this.batchOption, this.multipleSelection)
+    },
+    handleSelectionChange (val) {
+      this.multipleSelection = val
+    },
+    handleEdit (index, row) {
+      const path = `${this.$route.path}/${row.id}/edit`
+      console.log('edit path', path)
+      this.$router.push({ path })
+    },
+    async handleDelete (index, row) {
+      console.log('删除行：', index, row)
+      try {
+        await this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+      } catch (e) {
+        this.$notify({
+          title: '取消',
+          message: '已取消删除',
+          type: 'info'
+        })
+        return
+      }
+
+      await this.$axios({
+        method: 'delete',
+        url: `${this.apiPath}${row.id}/`
+      })
+      this.$notify({
+        title: '成功',
+        message: '删除成功',
+        type: 'success'
+      })
+      this.getList(this.page)
+    },
+    handleCurrentChange (page) {
+      console.log('handleCurrentChange', page)
+      this.getList(page)
+    }
+  }
+}
+</script>

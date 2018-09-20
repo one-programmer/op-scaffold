@@ -11,9 +11,18 @@
     <el-main>
       <div>
         <el-form ref="form" label-width="80px">
+          <el-form-item>
+            <el-row :gutter="20">
+              <el-col :offset="6" :span="18">
+                <el-checkbox v-model="dataConfig.listEnable">列表</el-checkbox>
+                <el-checkbox v-model="dataConfig.addEnable">新增</el-checkbox>
+                <el-checkbox v-model="dataConfig.editEnable">编辑</el-checkbox>
+              </el-col>
+            </el-row>
+          </el-form-item>
           <el-form-item v-for="data in dataList" :key="data.key" :label="data.key">
             <el-row :gutter="20">
-              <el-col :span="6">
+              <el-col :span="3">
                 <el-input v-model="data.name" placeholder="中文含义"></el-input>
               </el-col>
               <el-col :span="3">
@@ -27,17 +36,26 @@
                 </el-select>
               </el-col>
               <el-col :span="6">
-                <el-checkbox v-model="data.read">可读</el-checkbox>
-                <el-checkbox v-model="data.write">可写</el-checkbox>
+                <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
+                <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
               </el-col>
             </el-row>
           </el-form-item>
+          <el-form-item label="名称">
+            <el-input v-model="dataConfig.name"></el-input>
+          </el-form-item>
+          <el-form-item label="标题">
+            <el-input v-model="dataConfig.title"></el-input>
+          </el-form-item>
+          <el-form-item label="接口地址">
+            <el-input v-model="dataConfig.url"></el-input>
+          </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="downloadJson">下载JSON文件</el-button>
+            <el-button type="primary" @click="downloadJson">选择目录生成代码</el-button>
           </el-form-item>
         </el-form>
       </div>
-      <div>
+      <!-- <div>
         <el-table
           :data="columns"
           style="width: 100%">
@@ -64,19 +82,31 @@
             label="默认">
           </el-table-column>
         </el-table>  
-      </div>
+      </div> -->
     </el-main>
   </el-container>
 </template>
 <script>
+  import d2Curd from '../utils/d2Crud'
   const mysql = require('mysql')
+
   export default {
     data () {
       return {
         config: null,
         connection: null,
         tables: [],
+        currentTable: '',
+        name: '',
         columns: [],
+        dataConfig: {
+          name: '',
+          url: '',
+          title: '',
+          listEnable: true,
+          editEnable: true,
+          addEnable: true
+        },
         dataList: [],
         typeOptions: [
           {value: 'string', label: '字符'},
@@ -123,6 +153,10 @@
         })
       },
       showTableSchema (tableName) {
+        this.currentTable = tableName
+        this.dataConfig.name = tableName
+        this.dataConfig.title = tableName
+        this.dataConfig.url = `/api/admin/${tableName}`
         const query = `show full columns from ${tableName};`
         this.connection.query(query, (err, rows, fields) => {
           if (err) {
@@ -139,13 +173,12 @@
         return rows.map(row => {
           const key = row.Field
           const rowType = row.Type
-          let read = key !== 'id'
+          let read = row.Key !== 'PRI'
           let type = 'string'
-          if (rowType.startsWith('int')) {
+          if (rowType.startsWith('int') || rowType.startsWith('bigint')) {
             type = 'number'
-          } else if (rowType.startsWith('timestamp')) {
+          } else if (rowType.startsWith('timestamp') || rowType.startsWith('datetime')) {
             type = 'datetime'
-          } else if (rowType.startsWith('timestamp')) {
           }
           return {
             key: key,
@@ -157,10 +190,32 @@
         })
       },
       downloadJson () {
+        const {dialog} = require('electron').remote
+        const filePath = dialog.showOpenDialog({properties: ['openDirectory']})
+        console.log('showSaveDialog', filePath)
+        if (!filePath) {
+          this.$message.error('请选择保存路径')
+          return
+        }
+        d2Curd(filePath[0], this.dataConfig, this.dataList)
       }
     }
   }
 </script>
 <style>
-
+  .el-tag + .el-tag {
+    margin-left: 10px;
+  }
+  .button-new-tag {
+    margin-left: 10px;
+    height: 32px;
+    line-height: 30px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .input-new-tag {
+    width: 90px;
+    margin-left: 10px;
+    vertical-align: bottom;
+  }
 </style>
