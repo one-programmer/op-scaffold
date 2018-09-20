@@ -20,7 +20,7 @@
               </el-col>
             </el-row>
           </el-form-item>
-          <el-form-item v-for="data in dataList" :key="data.key" :label="data.key">
+          <el-form-item v-for="(data, index) in dataList" :key="data.key" :label="data.key">
             <el-row :gutter="20">
               <el-col :span="3">
                 <el-input v-model="data.name" placeholder="中文含义"></el-input>
@@ -39,6 +39,39 @@
                 <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
                 <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
               </el-col>
+              <el-col :span="3" v-if="data.type === 'number'">
+                <el-select
+                  placeholder="选择">
+                  <el-option
+                    v-for="choice in data.choices"
+                    :key="choice.value"
+                    :label="choice.label"
+                    :value="choice.value">
+                  </el-option>
+                </el-select>
+              </el-col>
+              <el-col :span="3" v-if="data.type === 'string'">
+                <el-select
+                  placeholder="选择">
+                  <el-option
+                    v-for="choice in data.choices"
+                    :key="choice.value"
+                    :label="choice.label"
+                    :value="choice.value">
+                  </el-option>
+                </el-select>
+              </el-col>
+              <template v-if="data.type === 'number' || data.type === 'string'">
+                <el-col :span="3">
+                  <el-input v-model="data._value" placeholder="值"></el-input>
+                </el-col>
+                <el-col :span="3">
+                  <el-input v-model="data._label" placeholder="标签"></el-input>
+                </el-col>
+                <el-col :span="2">
+                  <el-button type="primary" @click="addOption(index)">增加选项</el-button>
+                </el-col>
+              </template>
             </el-row>
           </el-form-item>
           <el-form-item label="名称">
@@ -156,7 +189,7 @@
         this.currentTable = tableName
         this.dataConfig.name = tableName
         this.dataConfig.title = tableName
-        this.dataConfig.url = `/api/admin/${tableName}`
+        this.dataConfig.url = `/api/admin/${tableName}/`
         const query = `show full columns from ${tableName};`
         this.connection.query(query, (err, rows, fields) => {
           if (err) {
@@ -185,7 +218,8 @@
             name: row.Comment,
             type: type,
             read: true,
-            write
+            write,
+            choices: []
           }
         })
       },
@@ -198,6 +232,14 @@
           return
         }
         d2Curd(filePath[0], this.dataConfig, this.dataList)
+      },
+      addOption (index) {
+        const data = this.dataList[index]
+        if (!data.choices) {
+          data.choices = []
+        }
+        data.choices.push({value: data._value, label: data._label})
+        this.dataList[index] = data
       }
     }
   }
