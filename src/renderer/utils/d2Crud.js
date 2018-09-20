@@ -39,32 +39,35 @@ export default (sourceDir, dataConfig, fields) => {
     })
   }
 
-  console.log('routes:')
-  let routes = []
-  templateData.forEach((template, index) => {
+  const routes = []
+
+  const addRouters = template => {
     routes.push(`      {
         path: '${template.path}',
         name: '${name}-${template.type}',
         component: () => import('@/pages/${name}/${template.type}'),
         meta: { meta, title: '${template.title}' }
-      }${index === templateData.length ? '' : ','}`)
-  })
+      },`)
+  }
 
   if (dataConfig.listEnable) {
     const template = templateData.find(template => template.type === 'list')
     renderTemplate(template)
     pushEnableType(template)
+    addRouters(template)
   }
 
   if (dataConfig.editEnable) {
     const template = templateData.find(template => template.type === 'edit')
     renderTemplate(template)
+    addRouters(template)
   }
 
   if (dataConfig.addEnable) {
     const template = templateData.find(template => template.type === 'add')
     renderTemplate(template)
     pushEnableType(template)
+    addRouters(template)
   }
 
   const menuPath = `${sourceDir}/src/menu/aside.json`

@@ -173,7 +173,7 @@
         return rows.map(row => {
           const key = row.Field
           const rowType = row.Type
-          let read = row.Key !== 'PRI'
+          let write = row.Key !== 'PRI'
           let type = 'string'
           if (rowType.startsWith('int') || rowType.startsWith('bigint')) {
             type = 'number'
@@ -184,8 +184,8 @@
             key: key,
             name: row.Comment,
             type: type,
-            read: read,
-            write: true
+            read: true,
+            write
           }
         })
       },
