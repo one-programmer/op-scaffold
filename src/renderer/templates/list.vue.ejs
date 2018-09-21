@@ -48,11 +48,12 @@
               label="<%= field.name %>">
               <template slot-scope="scope">
                 <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
-                  <%_ field.choices.forEach(function(choice) { _%>
-                  <el-option
-                    label="<%= choice.label %>" <% if (field.type === 'number') { %>:<% } %>value="<%= choice.value %>">
-                  </el-option>
-                  <%_ }) _%>
+                    <el-option
+                      v-for="item in <%= field.key %>Choices"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
                 </el-select>
               </template>
             </el-table-column>
@@ -119,7 +120,19 @@ export default {
       ],
       batchOption: '',
       multipleSelection: [],
-      search: ''
+      search: '',
+      <%_ fields.forEach(function(field){ _%>
+      <%_ if (field.choices && field.choices.length > 0) { _%>
+        <%= field.key %>Choices: [
+          <%_ field.choices.forEach(function(choice){ _%>
+          {
+            value: <%= field.type === 'number' ? choice.value : `"${choice.value}"` %>,
+            label: "<%= choice.label %>"
+          },
+          <%_ }) _%>
+        ]
+      <%_ } _%>
+      <%_ }) _%>
     }
   },
   created () {
