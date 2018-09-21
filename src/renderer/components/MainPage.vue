@@ -13,7 +13,10 @@
         <el-form ref="form" label-width="80px">
           <el-form-item>
             <el-row :gutter="20">
-              <el-col :offset="6" :span="18">
+              <el-col :span="6">
+                <el-button type="primary" @click="addField">添加字段</el-button>
+              </el-col>
+              <el-col :span="12">
                 <el-checkbox v-model="dataConfig.listEnable">列表</el-checkbox>
                 <el-checkbox v-model="dataConfig.addEnable">新增</el-checkbox>
                 <el-checkbox v-model="dataConfig.editEnable">编辑</el-checkbox>
@@ -22,12 +25,15 @@
           </el-form-item>
           <draggable v-model="dataList">
             <transition-group>
-              <el-form-item v-for="(data, index) in dataList" :key="data.key" :label="data.key">
+              <el-form-item v-for="(data, index) in dataList" :key="index">
                 <el-row :gutter="20">
+                  <el-col :span="2">
+                    <el-input v-model="data.key" placeholder="字段名"></el-input>
+                  </el-col>
                   <el-col :span="3">
                     <el-input v-model="data.name" placeholder="中文含义"></el-input>
                   </el-col>
-                  <el-col :span="3">
+                  <el-col :span="2">
                     <el-select v-model="data.type" placeholder="类型">
                       <el-option
                         v-for="item in typeOptions"
@@ -79,34 +85,6 @@
           </el-form-item>
         </el-form>
       </div>
-      <!-- <div>
-        <el-table
-          :data="columns"
-          style="width: 100%">
-          <el-table-column
-            prop="Field"
-            label="字段"
-            width="180">
-          </el-table-column>
-          <el-table-column
-            prop="Type"
-            label="类型"
-            width="180">
-          </el-table-column>
-          <el-table-column
-            prop="Null"
-            label="可空">
-          </el-table-column>
-          <el-table-column
-            prop="Comment"
-            label="描述">
-          </el-table-column>
-          <el-table-column
-            prop="Default"
-            label="默认">
-          </el-table-column>
-        </el-table>  
-      </div> -->
     </el-main>
   </el-container>
 </template>
@@ -242,6 +220,16 @@
       },
       handleSelectClose (data, index) {
         data.choices.splice(index, 1)
+      },
+      addField () {
+        this.dataList.push({
+          key: '',
+          name: '',
+          type: '',
+          read: true,
+          write: true,
+          choices: []
+        })
       }
     }
   }
