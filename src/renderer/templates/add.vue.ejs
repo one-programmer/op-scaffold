@@ -12,7 +12,7 @@
           <el-form-item label="<%= field.name %>">
             <el-select v-model="form.region" placeholder="请选择<%= field.name %>">
               <%_ field.choices.forEach(function(choice) { _%>
-              <el-option label="<%= choice[1] %>" value="<%= choice[0] %>"></el-option>
+              <el-option label="<%= choice.label %>" <% if (field.type === 'number') { %> :<% } %>value="<%= choice.value %>"></el-option>
               <%_ }) _%>
             </el-select>
           </el-form-item>

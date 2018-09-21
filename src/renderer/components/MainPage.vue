@@ -20,47 +20,51 @@
               </el-col>
             </el-row>
           </el-form-item>
-          <el-form-item v-for="(data, index) in dataList" :key="data.key" :label="data.key">
-            <el-row :gutter="20">
-              <el-col :span="3">
-                <el-input v-model="data.name" placeholder="中文含义"></el-input>
-              </el-col>
-              <el-col :span="3">
-                <el-select v-model="data.type" placeholder="类型">
-                  <el-option
-                    v-for="item in typeOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value">
-                  </el-option>
-                </el-select>
-              </el-col>
-              <el-col :span="4">
-                <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
-                <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
-              </el-col>
-              <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
-                <el-tag
-                  v-for="item in data.choices"
-                  :key="item.label"
-                  closable
-                  type="">
-                  {{item.label}}
-                </el-tag>
-              </el-col>
-              <template v-if="data.type === 'number' || data.type === 'string'">
-                <el-col :span="3">
-                  <el-input v-model="data._value" placeholder="值"></el-input>
-                </el-col>
-                <el-col :span="3">
-                  <el-input v-model="data._label" placeholder="标签"></el-input>
-                </el-col>
-                <el-col :span="2">
-                  <el-button type="primary" @click="addOption(index)">增加选项</el-button>
-                </el-col>
-              </template>
-            </el-row>
-          </el-form-item>
+          <draggable v-model="dataList">
+            <transition-group>
+              <el-form-item v-for="(data, index) in dataList" :key="data.key" :label="data.key">
+                <el-row :gutter="20">
+                  <el-col :span="3">
+                    <el-input v-model="data.name" placeholder="中文含义"></el-input>
+                  </el-col>
+                  <el-col :span="3">
+                    <el-select v-model="data.type" placeholder="类型">
+                      <el-option
+                        v-for="item in typeOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                      </el-option>
+                    </el-select>
+                  </el-col>
+                  <el-col :span="4">
+                    <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
+                    <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
+                  </el-col>
+                  <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
+                    <el-tag
+                      v-for="item in data.choices"
+                      :key="item.label"
+                      closable
+                      type="">
+                      {{item.label}}
+                    </el-tag>
+                  </el-col>
+                  <template v-if="data.type === 'number' || data.type === 'string'">
+                    <el-col :span="3">
+                      <el-input v-model="data._value" placeholder="值"></el-input>
+                    </el-col>
+                    <el-col :span="3">
+                      <el-input v-model="data._label" placeholder="标签"></el-input>
+                    </el-col>
+                    <el-col :span="2">
+                      <el-button type="primary" @click="addOption(index)">增加选项</el-button>
+                    </el-col>
+                  </template>
+                </el-row>
+              </el-form-item>
+            </transition-group>
+          </draggable>
           <el-form-item label="名称">
             <el-input v-model="dataConfig.name"></el-input>
           </el-form-item>
@@ -108,9 +112,13 @@
 </template>
 <script>
   import d2Curd from '../utils/d2Crud'
+  import draggable from 'vuedraggable'
   const mysql = require('mysql')
 
   export default {
+    components: {
+      draggable
+    },
     data () {
       return {
         config: null,

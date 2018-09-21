@@ -43,18 +43,31 @@
                 <d2-icon :name="scope.row.<%= field.key %> ? 'check': 'close'"/>
               </template>
             </el-table-column>
+            <%_ } else if (field.choices && field.choices.length > 0) { _%>
+            <el-table-column
+              label="<%= field.name %>">
+              <template slot-scope="scope">
+                <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
+                  <%_ field.choices.forEach(function(choice) { _%>
+                  <el-option
+                    label="<%= choice.label %>" <% if (field.type === 'number') { %>:<% } %>value="<%= choice.value %>">
+                  </el-option>
+                  <%_ }) _%>
+                </el-select>
+              </template>
+            </el-table-column>
             <%_ } else if (field.type === 'image') { _%>
-              <el-table-column label="<%= field.name %>">
-                <template slot-scope="scope">
-                  <img :src="scope.row.<%= field.key %>" style="width: 50px;">
-                </template>
-              </el-table-column>
+            <el-table-column label="<%= field.name %>">
+              <template slot-scope="scope">
+                <img :src="scope.row.<%= field.key %>" style="width: 50px;">
+              </template>
+            </el-table-column>
             <%_ } else if (field.type === 'file') { _%>
-              <el-table-column label="<%= field.name %>">
-                <template slot-scope="scope">
-                  <a v-if="scope.row.<%= field.key %>" :href="scope.row.<%= field.key %>" target="_blank">点击下载</a>
-                </template>
-              </el-table-column>
+            <el-table-column label="<%= field.name %>">
+              <template slot-scope="scope">
+                <a v-if="scope.row.<%= field.key %>" :href="scope.row.<%= field.key %>" target="_blank">点击下载</a>
+              </template>
+            </el-table-column>
             <%_ } else { _%>
             <el-table-column
               prop="<%= field.key %>"
