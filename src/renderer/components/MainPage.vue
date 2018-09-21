@@ -35,31 +35,18 @@
                   </el-option>
                 </el-select>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="4">
                 <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
                 <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
               </el-col>
-              <el-col :span="3" v-if="data.type === 'number'">
-                <el-select
-                  placeholder="选择">
-                  <el-option
-                    v-for="choice in data.choices"
-                    :key="choice.value"
-                    :label="choice.label"
-                    :value="choice.value">
-                  </el-option>
-                </el-select>
-              </el-col>
-              <el-col :span="3" v-if="data.type === 'string'">
-                <el-select
-                  placeholder="选择">
-                  <el-option
-                    v-for="choice in data.choices"
-                    :key="choice.value"
-                    :label="choice.label"
-                    :value="choice.value">
-                  </el-option>
-                </el-select>
+              <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
+                <el-tag
+                  v-for="item in data.choices"
+                  :key="item.label"
+                  closable
+                  type="">
+                  {{item.label}}
+                </el-tag>
               </el-col>
               <template v-if="data.type === 'number' || data.type === 'string'">
                 <el-col :span="3">
@@ -231,15 +218,22 @@
           this.$message.error('请选择保存路径')
           return
         }
-        d2Curd(filePath[0], this.dataConfig, this.dataList)
+        const filterDataList = this.dataList.map(data => {
+          const keys = Object.keys(data).filter(key => !key.startsWith('_'))
+          const newData = {}
+          keys.forEach(key => { newData[key] = data[key] })
+          return newData
+        })
+        console.log('filterDataList', filterDataList)
+        d2Curd(filePath[0], this.dataConfig, filterDataList)
       },
       addOption (index) {
         const data = this.dataList[index]
-        if (!data.choices) {
-          data.choices = []
-        }
         data.choices.push({value: data._value, label: data._label})
         this.dataList[index] = data
+      },
+      handleSelectClose (data, index) {
+        data.choices.splice(index, 1)
       }
     }
   }
