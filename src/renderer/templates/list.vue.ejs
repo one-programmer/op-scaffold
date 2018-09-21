@@ -123,14 +123,14 @@ export default {
       search: '',
       <%_ fields.forEach(function(field){ _%>
       <%_ if (field.choices && field.choices.length > 0) { _%>
-        <%= field.key %>Choices: [
-          <%_ field.choices.forEach(function(choice){ _%>
-          {
-            value: <%= field.type === 'number' ? choice.value : `"${choice.value}"` %>,
-            label: "<%= choice.label %>"
-          },
-          <%_ }) _%>
-        ]
+      <%= field.key %>Choices: [
+        <%_ field.choices.forEach(function(choice){ _%>
+        {
+          value: <%= field.type === 'number' ? choice.value : `"${choice.value}"` %>,
+          label: "<%= choice.label %>"
+        },
+        <%_ }) _%>
+      ]
       <%_ } _%>
       <%_ }) _%>
     }
