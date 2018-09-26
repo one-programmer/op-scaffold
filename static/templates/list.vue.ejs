@@ -127,7 +127,7 @@ export default {
         <%_ field.choices.forEach(function(choice){ _%>
         {
           value: <%- field.type === 'number' ? choice.value : `'${choice.value}'` %>,
-          label: "<%= choice.label %>"
+          label: '<%= choice.label %>'
         },
         <%_ }) _%>
       ],
