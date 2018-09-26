@@ -1,7 +1,7 @@
 {
   "name": "op-scaffold",
   "productName": "op-scaffold",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "ZhangBohan <bohanzhang@foxmail.com>",
   "description": "An Electron scaffold project",
   "license": null,
