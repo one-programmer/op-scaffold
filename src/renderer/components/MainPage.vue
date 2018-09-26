@@ -204,6 +204,8 @@
             type = 'number'
           } else if (rowType.startsWith('timestamp') || rowType.startsWith('datetime')) {
             type = 'datetime'
+          } else if (rowType.startsWith('tinyint')) {
+            type = 'boolean'
           }
           return {
             key: key,

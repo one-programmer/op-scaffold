@@ -24,6 +24,7 @@ function createWindow () {
     useContentSize: true,
     width: 1000
   })
+  mainWindow.maximize()
 
   mainWindow.loadURL(winURL)
 

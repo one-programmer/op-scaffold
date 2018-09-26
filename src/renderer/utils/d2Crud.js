@@ -4,7 +4,7 @@ const path = require('path')
 
 export default (sourceDir, dataConfig, fields) => {
   const { name, title, url } = dataConfig
-  const options = { }
+  const options = { debug: true, compileDebug: true }
 
   const templateData = [
     { type: 'list', path: `/${name}`, title: `${title} 列表`, icon: 'th-list' },
@@ -29,8 +29,10 @@ export default (sourceDir, dataConfig, fields) => {
   const data = {fields, templateData, apiPath: url}
 
   const renderTemplate = template => {
-    ejs.renderFile(`${__dirname}/../templates/${template.type}.vue.ejs`, data, options, function (err, str) {
-      if (err) {}
+    ejs.renderFile(path.join(__static, `/templates/${template.type}.vue.ejs`), data, options, function (err, str) {
+      if (err) {
+        console.log(`renderTemplate error. type: ${template.type}, err: ${err}`)
+      }
       const dirName = path.join(sourceDir, `/src/pages/${name}/`)
       if (!fs.existsSync(dirName)) {
         fs.mkdirSync(dirName)
@@ -78,7 +80,9 @@ export default (sourceDir, dataConfig, fields) => {
       return
     }
     menus.push(menu)
-    fs.writeFile(menuPath, JSON.stringify(menus, null, 2))
+    fs.writeFile(menuPath, JSON.stringify(menus, null, 2), (err) => {
+      console.log(`write ${routesPath}. error: ${err}`)
+    })
   })
 
   const routesPath = `${sourceDir}/src/router/frameIn.js`
@@ -105,6 +109,8 @@ export default (sourceDir, dataConfig, fields) => {
       lines[codeIndex] = line + ','
     }
     const newLines = lines.slice(0, codeIndex + 1).concat(routes).concat(lines.slice(codeIndex + 1))
-    fs.writeFile(routesPath, newLines.join('\n'))
+    fs.writeFile(routesPath, newLines.join('\n'), (err) => {
+      console.log(`write ${routesPath}. error: ${err}`)
+    })
   })
 }
