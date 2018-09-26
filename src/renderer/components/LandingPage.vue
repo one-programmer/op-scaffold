@@ -42,6 +42,9 @@
         }
       }
     },
+    created () {
+      this.config = localStorage.getItem('config') ? JSON.parse(localStorage.getItem('config')) : this.config
+    },
     methods: {
       open (link) {
         this.$electron.shell.openExternal(link)

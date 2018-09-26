@@ -8,7 +8,7 @@
             <el-date-picker v-model="form.<%= field.key %>" type="datetime" placeholder="选择日期时间">
             </el-date-picker>
           </el-form-item>
-          <%_ } else if (field.choices && field.choices.length > 0) { _%>
+          <%_ } else if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
           <el-form-item label="<%= field.name %>">
             <el-select v-model="form.<%= field.key %>" placeholder="请选择<%= field.name %>">
               <%_ field.choices.forEach(function(choice) { _%>
@@ -82,12 +82,38 @@ export default {
       <%_ if (field.type === 'file') { _%>
       <%= field.key %>Data: {},
       <%= field.key %>FileList: []
+      <%_ } else if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
+      <%= field.key %>Choices: [
+        <%_ field.choices.forEach(function(choice){ _%>
+        {
+          value: <%- field.type === 'number' ? choice.value : `'${choice.value}'` %>,
+          label: "<%= choice.label %>"
+        },
+        <%_ }) _%>
+      ],
       <%_ } _%>
       <%_ }) _%>
     }
   },
   created () {
     this.initForm()
+    <%_ fields.forEach(function(field){ _%>
+    <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
+    <%_ if (field._select_type === 'api') { _%>
+    // get choices
+    this.$axios({
+      method: 'get',
+      url: '<%= field._api_path %>',
+      params: {
+        page: 1,
+        pageSize: 500000 // 默认不分页
+      }
+    }).then(result => {
+      this.<%= field.key %>Choices = result.results
+    })
+    <%_ } _%>
+    <%_ } _%>
+    <%_ }) _%>
   },
   methods: {
     async initForm () {

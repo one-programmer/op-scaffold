@@ -58,14 +58,33 @@
                   </el-col>
                   <template v-if="data.type === 'number' || data.type === 'string'">
                     <el-col :span="3">
-                      <el-input v-model="data._value" placeholder="值"></el-input>
+                      <el-select v-model="data._select_type" placeholder="选择类型">
+                        <el-option label="固定" value="fixed"></el-option>
+                        <el-option label="接口" value="api"></el-option>
+                      </el-select>
                     </el-col>
-                    <el-col :span="3">
-                      <el-input v-model="data._label" placeholder="标签"></el-input>
-                    </el-col>
-                    <el-col :span="2">
-                      <el-button type="primary" @click="addOption(index)">增加选项</el-button>
-                    </el-col>
+                    <template v-if="data._select_type === 'fixed'">
+                      <el-col :span="3">
+                        <el-input v-model="data._value" placeholder="值"></el-input>
+                      </el-col>
+                      <el-col :span="3">
+                        <el-input v-model="data._label" placeholder="标签"></el-input>
+                      </el-col>
+                      <el-col :span="1">
+                        <el-button type="primary" @click="addOption(index)">增加</el-button>
+                      </el-col>
+                    </template>
+                    <template v-if="data._select_type === 'api'">
+                      <el-col :span="3">
+                        <el-input v-model="data._api_path" placeholder="接口地址"></el-input>
+                      </el-col>
+                      <el-col :span="2">
+                        <el-input v-model="data._label" placeholder="标签"></el-input>
+                      </el-col>
+                      <el-col :span="2">
+                        <el-input v-model="data._value" placeholder="内容"></el-input>
+                      </el-col>
+                    </template>
                   </template>
                 </el-row>
               </el-form-item>
@@ -204,14 +223,14 @@
           this.$message.error('请选择保存路径')
           return
         }
-        const filterDataList = this.dataList.map(data => {
-          const keys = Object.keys(data).filter(key => !key.startsWith('_'))
-          const newData = {}
-          keys.forEach(key => { newData[key] = data[key] })
-          return newData
-        })
-        console.log('filterDataList', filterDataList)
-        d2Curd(filePath[0], this.dataConfig, filterDataList)
+        // const filterDataList = this.dataList.map(data => {
+        //   const keys = Object.keys(data).filter(key => !key.startsWith('_'))
+        //   const newData = {}
+        //   keys.forEach(key => { newData[key] = data[key] })
+        //   return newData
+        // })
+        console.log('filterDataList', this.dataList)
+        d2Curd(filePath[0], this.dataConfig, this.dataList)
       },
       addOption (index) {
         const data = this.dataList[index]

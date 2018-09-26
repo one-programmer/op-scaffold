@@ -43,7 +43,7 @@
                 <d2-icon :name="scope.row.<%= field.key %> ? 'check': 'close'"/>
               </template>
             </el-table-column>
-            <%_ } else if (field.choices && field.choices.length > 0) { _%>
+            <%_ } else if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
             <el-table-column
               label="<%= field.name %>">
               <template slot-scope="scope">
@@ -122,11 +122,11 @@ export default {
       multipleSelection: [],
       search: '',
       <%_ fields.forEach(function(field){ _%>
-      <%_ if (field.choices && field.choices.length > 0) { _%>
+      <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
       <%= field.key %>Choices: [
         <%_ field.choices.forEach(function(choice){ _%>
         {
-          value: <%- field.type === 'number' ? choice.value : `"${choice.value}"` %>,
+          value: <%- field.type === 'number' ? choice.value : `'${choice.value}'` %>,
           label: "<%= choice.label %>"
         },
         <%_ }) _%>
@@ -137,6 +137,24 @@ export default {
   },
   created () {
     this.getList()
+
+    <%_ fields.forEach(function(field){ _%>
+    <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
+    <%_ if (field._select_type === 'api') { _%>
+    // get choices
+    this.$axios({
+      method: 'get',
+      url: '<%= field._api_path %>',
+      params: {
+        page: 1,
+        pageSize: 500000 // 默认不分页
+      }
+    }).then(result => {
+      this.<%= field.key %>Choices = result.results
+    })
+    <%_ } _%>
+    <%_ } _%>
+    <%_ }) _%>
   },
   methods: {
     getList (page) {
