@@ -43,7 +43,7 @@
                 <d2-icon :name="scope.row.<%= field.key %> ? 'check': 'close'"/>
               </template>
             </el-table-column>
-            <%_ } else if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
+            <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'fixed')) { _%>
             <el-table-column
               label="<%= field.name %>">
               <template slot-scope="scope">
@@ -53,6 +53,20 @@
                       :key="item.value"
                       :label="item.label"
                       :value="item.value">
+                    </el-option>
+                </el-select>
+              </template>
+            </el-table-column>
+            <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'api')) { _%>
+            <el-table-column
+              label="<%= field.name %>">
+              <template slot-scope="scope">
+                <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
+                    <el-option
+                      v-for="item in <%= field.key %>Choices"
+                      :key="item.id"
+                      :label="item.<%= field._label %>"
+                      :value="item.<%= field._value %>">
                     </el-option>
                 </el-select>
               </template>

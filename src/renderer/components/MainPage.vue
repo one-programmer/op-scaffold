@@ -49,10 +49,11 @@
                   </el-col>
                   <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
                     <el-tag
-                      v-for="item in data.choices"
+                      v-for="(item,index) in data.choices"
                       :key="item.label"
                       closable
-                      type="">
+                      type=""
+                      @close="handleSelectClose(data, index)">
                       {{item.label}}
                     </el-tag>
                   </el-col>
@@ -140,7 +141,8 @@
           {value: 'datetime', label: '日期'},
           {value: 'boolean', label: '布尔'},
           {value: 'image', label: '图片'},
-          {value: 'file', label: '文件'}
+          {value: 'file', label: '文件'},
+          {value: 'content', label: '富文本编辑'}
         ]
       }
     },
