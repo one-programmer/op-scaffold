@@ -49,7 +49,7 @@
                   </el-col>
                   <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
                     <el-tag
-                      v-for="(item,index) in data.choices"
+                      v-for="(item, index) in data.choices"
                       :key="item.label"
                       closable
                       type=""
