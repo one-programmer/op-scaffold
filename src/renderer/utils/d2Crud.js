@@ -44,7 +44,13 @@ export default (sourceDir, dataConfig, fields) => {
   const routes = []
 
   const addRouters = template => {
-    routes.push(`      {
+    routes.push({ name: `${name}-${template.type}`, template })
+  }
+
+  let routesLines = []
+
+  const addRouterLines = template => {
+    routesLines.push(`      {
         path: '${template.path}',
         name: '${name}-${template.type}',
         component: () => import('@/pages/${name}/${template.type}'),
@@ -90,9 +96,36 @@ export default (sourceDir, dataConfig, fields) => {
     if (err) {}
 
     const lines = data.split('\n')
-    console.log('lines', lines)
     let count = 0
     let codeIndex = 0
+
+    console.log('routes', routes)
+
+    // 删除无需重复生成的route
+    lines.forEach(line => {
+      if (line) {
+        const trimedLine = line.replace(/\s/g, '')
+        if (trimedLine.startsWith('name:\'')) {
+          // 取得route name
+          const routeName = trimedLine.substring('name:\''.length, trimedLine.lastIndexOf('\''))
+          // 查找待生成的route列表中是否存在该route，存在则删除列表中的对应route
+          const index = routes.map(route => route.name).indexOf(routeName)
+          if (index !== -1) {
+            routes.splice(index, 1)
+          }
+        }
+      }
+    })
+    console.log('routes', routes)
+    if (routes.length === 0) {
+      return
+    }
+
+    routes.forEach(route => {
+      addRouterLines(route.template)
+    })
+
+    // 倒查']'，以便找到写入新代码地点
     for (let i = lines.length; i > 0; i--) {
       const line = lines[i]
       if (line && line.endsWith(']')) {
@@ -108,7 +141,7 @@ export default (sourceDir, dataConfig, fields) => {
     if (!line.endsWith(',')) {
       lines[codeIndex] = line + ','
     }
-    const newLines = lines.slice(0, codeIndex + 1).concat(routes).concat(lines.slice(codeIndex + 1))
+    const newLines = lines.slice(0, codeIndex + 1).concat(routesLines).concat(lines.slice(codeIndex + 1))
     fs.writeFile(routesPath, newLines.join('\n'), (err) => {
       console.log(`write ${routesPath}. error: ${err}`)
     })
