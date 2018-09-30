@@ -1,15 +1,12 @@
 <template>
   <el-container>
-    <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-      <el-menu :default-openeds="['1']">
-        <el-submenu index="1">
-          <template slot="title">表格</template>
-          <el-menu-item v-for="(table, index) in tables" :key="index" :index="`1-${index}`" @click="showTableSchema(table)">{{ table }}</el-menu-item>
-        </el-submenu>
-      </el-menu>
-    </el-aside>
+    <el-header>
+        <el-breadcrumb class="breadcrumb" separator-class="el-icon-arrow-right">
+          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item>{{currentPositon}}</el-breadcrumb-item>
+        </el-breadcrumb>
+    </el-header>
     <el-main>
-      <div>
         <el-form ref="form" label-width="80px">
           <el-form-item>
             <el-row :gutter="20">
@@ -104,12 +101,12 @@
             <el-button type="primary" @click="downloadJson">选择目录生成代码</el-button>
           </el-form-item>
         </el-form>
-      </div>
     </el-main>
   </el-container>
 </template>
 <script>
   import d2Curd from '../utils/d2Crud'
+  import creatHistory from '../utils/creatHistory'
   import draggable from 'vuedraggable'
   const mysql = require('mysql')
 
@@ -119,6 +116,7 @@
     },
     data () {
       return {
+        currentPositon: '',
         config: null,
         connection: null,
         tables: [],
@@ -126,6 +124,7 @@
         name: '',
         columns: [],
         dataConfig: {
+          currentTable: '',
           name: '',
           url: '',
           title: '',
@@ -147,40 +146,40 @@
       }
     },
     created () {
-      const configStr = localStorage.getItem('config')
-      this.config = JSON.parse(configStr)
-      const connection = mysql.createConnection(this.config)
-      // connect to mysql
-      connection.connect((err) => {
-        // in case of error
-        if (err) {
-          console.log(err.code)
-          console.log(err.fatal)
-          this.$message.error(`连接错误。错误码：${err.code}`)
-        } else {
-          console.log('connection sucess')
-          this.connection = connection
-          localStorage.setItem('config', JSON.stringify(this.config))
-          this.$router.push({ name: 'main-page' })
-          this.getTables()
-        }
-      })
-    },
-    methods: {
-      getTables () {
-        const query = 'show tables;'
-        this.connection.query(query, (err, rows, fields) => {
+      this.type = this.$route.query.type
+      if (this.type === 1 || this.type === 3) {
+        this.currentPositon = this.type === 1 ? 'JSON文件' : '历史记录'
+        let data = JSON.parse(this.$route.query.data)
+        this.dataList = data.dataList
+        this.dataConfig = data.dataConfig
+      } else if (this.type === 2) {
+        this.currentPositon = '新建'
+        this.dataList = []
+        this.dataConfig = {}
+      } else {
+        this.currentPositon = '数据库'
+        const configStr = localStorage.getItem('config')
+        this.config = JSON.parse(configStr)
+        const connection = mysql.createConnection(this.config)
+        // connect to mysql
+        connection.connect((err) => {
+          // in case of error
           if (err) {
             console.log(err.code)
             console.log(err.fatal)
             this.$message.error(`连接错误。错误码：${err.code}`)
+          } else {
+            console.log('connection sucess')
+            this.connection = connection
+            localStorage.setItem('config', JSON.stringify(this.config))
+            this.showTableSchema(this.$route.query.tableName)
           }
-          this.tables = rows.map(row => row[`Tables_in_${this.config.database}`])
-          console.log('query', rows)
         })
-      },
+      }
+    },
+    methods: {
       showTableSchema (tableName) {
-        this.currentTable = tableName
+        this.dataConfig.currentTable = tableName
         this.dataConfig.name = tableName
         this.dataConfig.title = tableName
         this.dataConfig.url = `/api/admin/${tableName}/`
@@ -235,6 +234,7 @@
         // })
         console.log('filterDataList', this.dataList)
         d2Curd(filePath[0], this.dataConfig, this.dataList)
+        creatHistory(this.dataConfig, this.dataList)
       },
       addOption (index) {
         const data = this.dataList[index]
@@ -257,7 +257,7 @@
     }
   }
 </script>
-<style>
+<style scoped>
   .el-tag + .el-tag {
     margin-left: 10px;
   }
@@ -272,5 +272,9 @@
     width: 90px;
     margin-left: 10px;
     vertical-align: bottom;
+  }
+  .breadcrumb {
+    padding: 20px;
+    font-size: 18px;
   }
 </style>
