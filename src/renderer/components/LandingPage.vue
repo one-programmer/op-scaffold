@@ -5,7 +5,9 @@
         <el-menu :default-openeds="['1']">
           <el-submenu index="1">
             <template slot="title">快速选择</template>
-            <el-menu-item v-if="histories.length" v-for="(table, index) in histories" :key="index" :index="`1-${index}`" @click="showTableSchema(table)">{{ table }}</el-menu-item>
+            <el-menu-item v-if="histories.length" v-for="(table, index) in histories" :key="index" :index="`1-${index}`" @click="showTableSchema(table)">{{ table }}
+              <i class="el-icon-close" @click.stop="deleteHistory(table, index)"></i>
+            </el-menu-item>
             <el-menu-item v-if="!histories.length" :key="0" :index="`1-0`" >暂无记录</el-menu-item>
           </el-submenu>
         </el-menu>
@@ -58,14 +60,13 @@
       :visible.sync="dialogVisible"
       width="30%">
       <ul class="table-box">
-        <li v-for="item in tables" @click="showDB(item)">{{item}}</li>
+        <li v-for="item in tables" :key="item" @click="showDB(item)">{{item}}</li>
       </ul>
     </el-dialog>
   </div>
 </template>
 <script>
-  const fs = require('fs')
-  const path = require('path')
+  import {getHistories, deleteHistory, getTableData} from '../utils/creatHistory.js'
   const mysql = require('mysql')
   export default {
     name: 'landing-page',
@@ -89,13 +90,14 @@
     },
     created () {
       this.config = localStorage.getItem('config') ? JSON.parse(localStorage.getItem('config')) : this.config
-      if (fs.existsSync(path.join(__static, `newSheet/`))) {
-        this.histories = fs.readdirSync(path.join(__static, `newSheet/`))
-      }
+      this.histories = getHistories()
     },
     methods: {
       open (link) {
         this.$electron.shell.openExternal(link)
+      },
+      deleteHistory (table, index) {
+        deleteHistory(table, index)
       },
       tabClick (item) {
         if (item.index === '2') {
@@ -134,14 +136,14 @@
         })
       },
       showTableSchema (tabel) {
-        let data = fs.readFileSync(path.join(__static, `newSheet/`, `${tabel}`), 'utf8')
+        let data = getTableData(tabel)
         this.$router.push({name: 'main-page', query: {type: 3, data: data}})
       },
       showDB (item) {
         this.$router.push({name: 'main-page', query: {type: 0, tableName: item}})
       },
       jsonUpload (res, file) {
-        let data = fs.readFileSync(file.raw.path, 'utf8')
+        let data = getTableData(file.raw.path)
         this.$router.push({name: 'main-page', query: {type: 1, data: data}})
       }
     }
@@ -153,5 +155,12 @@
     list-style: none;
     font-size: 16px;
     line-height: 30px;
+  }
+  .el-icon-close{
+    position: absolute;
+    right: 0;
+    padding: 15px;
+    cursor: pointer;
+    z-index: 10;
   }
 </style>

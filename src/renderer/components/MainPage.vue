@@ -120,11 +120,9 @@
         config: null,
         connection: null,
         tables: [],
-        currentTable: '',
         name: '',
         columns: [],
         dataConfig: {
-          currentTable: '',
           name: '',
           url: '',
           title: '',
@@ -179,7 +177,6 @@
     },
     methods: {
       showTableSchema (tableName) {
-        this.dataConfig.currentTable = tableName
         this.dataConfig.name = tableName
         this.dataConfig.title = tableName
         this.dataConfig.url = `/api/admin/${tableName}/`
