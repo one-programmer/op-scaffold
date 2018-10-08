@@ -151,7 +151,6 @@ export default {
   },
   created () {
     this.getList()
-
     <%_ fields.forEach(function(field){ _%>
     <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
     <%_ if (field._select_type === 'api') { _%>

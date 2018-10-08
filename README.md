@@ -2,6 +2,14 @@
 
 > An Electron scaffold project
 
+## How to start
+
+```
+$ git clone https://github.com/one-programmer/op-d2-start-kit.git
+$ cd op-d2-start-kit
+$ npm install
+```
+
 #### Build Setup
 
 ``` bash
