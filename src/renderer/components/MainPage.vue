@@ -9,6 +9,34 @@
     <el-main>
         <el-form ref="form" label-width="80px">
           <el-form-item>
+            <!-- 自定义配置搜索 -->
+            <el-row>
+              列表页是否需要下拉框搜索<el-checkbox v-model="dataConfig.searchEnable" @change="searchEnableChange"></el-checkbox>
+            </el-row>
+            <el-row v-if="dataConfig.searchEnable">
+              <el-col :span="5">
+                <el-tag
+                  v-for="(item, index) in searchFilterOptions"
+                  :key="item.value"
+                  closable
+                  type=""
+                  @close="handleSearchClose(index)">
+                  {{item.label}}
+                </el-tag>
+              </el-col>
+              <el-col :span="3">
+                <el-input v-model="search.value" placeholder="值"></el-input>
+              </el-col>
+              <el-col :span="3">
+                <el-input v-model="search.label" placeholder="标签"></el-input>
+              </el-col>
+              <el-col :span="1">
+                <el-button type="primary" @click="addSearchFilterOption">增加</el-button>
+              </el-col>
+            </el-row>
+          </el-form-item>
+
+          <el-form-item>
             <el-row :gutter="20">
               <el-col :span="6">
                 <el-button type="primary" @click="addField">添加字段</el-button>
@@ -25,6 +53,9 @@
               <el-form-item v-for="(data, index) in dataList" :key="index">
                 <el-row :gutter="20">
                   <el-col :span="2">
+                    <i class="el-icon-close" @click="deleteDataItem(index)"></i>
+                  </el-col>
+                  <el-col :span="2">
                     <el-input v-model="data.key" placeholder="字段名"></el-input>
                   </el-col>
                   <el-col :span="3">
@@ -40,9 +71,10 @@
                       </el-option>
                     </el-select>
                   </el-col>
-                  <el-col :span="4">
+                  <el-col :span="5">
                     <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
                     <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
+                    <el-checkbox v-if="data.type !== 'boolean' && data.write" v-model="data.require">必填</el-checkbox>
                   </el-col>
                   <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
                     <el-tag
@@ -116,6 +148,8 @@
     },
     data () {
       return {
+        search: {},
+        searchFilterOptions: [],
         currentPositon: '',
         config: null,
         connection: null,
@@ -128,7 +162,8 @@
           title: '',
           listEnable: true,
           editEnable: true,
-          addEnable: true
+          addEnable: true,
+          searchEnable: false
         },
         dataList: [],
         typeOptions: [
@@ -192,6 +227,9 @@
           console.log('query', rows)
         })
       },
+      searchEnableChange (value) {
+        this.searchFilterOptions = value ? this.searchFilterOptions : []
+      },
       boxDataList (rows) {
         return rows.map(row => {
           const key = row.Field
@@ -211,6 +249,7 @@
             type: type,
             read: true,
             write,
+            require: true,
             choices: []
           }
         })
@@ -230,16 +269,30 @@
         //   return newData
         // })
         console.log('filterDataList', this.dataList)
-        d2Curd(filePath[0], this.dataConfig, this.dataList)
+        d2Curd(filePath[0], this.dataConfig, this.dataList, this.searchFilterOptions)
         creatHistory(this.dataConfig, this.dataList)
       },
       addOption (index) {
         const data = this.dataList[index]
         data.choices.push({value: data._value, label: data._label})
         this.dataList[index] = data
+        data._value = ''
+        data._label = ''
+      },
+      addSearchFilterOption () {
+        var search = Object.assign({}, this.search)
+        this.searchFilterOptions.push(search)
+        this.search = {}
+        console.log(this.searchFilterOptions)
+      },
+      handleSearchClose (index) {
+        this.searchFilterOptions.splice(index, 1)
       },
       handleSelectClose (data, index) {
         data.choices.splice(index, 1)
+      },
+      deleteDataItem (index) {
+        this.dataList.splice(index, 1)
       },
       addField () {
         this.dataList.push({
@@ -248,6 +301,7 @@
           type: '',
           read: true,
           write: true,
+          require: true,
           choices: []
         })
       }

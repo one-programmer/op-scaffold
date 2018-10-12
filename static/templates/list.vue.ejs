@@ -1,127 +1,136 @@
 <template>
-  <d2-container>
-    <div class="d2-mt d2-mr">
-      <el-card v-if="config.searchFlag">
-        <el-input placeholder="请输入内容" v-model="search" class="input-with-select">
-          <el-button slot="append" icon="el-icon-search"></el-button>
+  <d2-container ref="container">
+    <el-card ref="searchBox" class="search-box" v-if="searchOption && searchOption.length">
+      <el-row>
+        <el-select v-model="search.filter_key" placeholder="请选择">
+          <el-option
+            v-for="item in searchOption"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <el-input placeholder="请输入内容" v-model="search.search_key">
+          <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
         </el-input>
-      </el-card>
-      <el-card>
-        <div v-if="batchOptions.length > 0">
-          <el-form :inline="true" class="demo-form-inline">
-            <el-form-item label="批量">
-              <el-select v-model="batchOption" placeholder="请选择">
-                <el-option
-                  v-for="item in batchOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="warning" @click="doBatchOption">执行</el-button>
-            </el-form-item>
-          </el-form>
-        </div>
-
-        <el-table
-          stripe
-          :data="dataList"
-          @selection-change="handleSelectionChange"
-          style="width: 100%">
-          <el-table-column
-            v-if="batchOptions.length > 0"
-            type="selection"
-            width="55">
-          </el-table-column>
-          <%_ fields.forEach(function(field){ _%>
-            <%_ if (field.read) { _%>
-            <%_ if (field.type === 'boolean') { _%>
-            <el-table-column label="<%= field.name %>">
-              <template slot-scope="scope">
-                <d2-icon :name="scope.row.<%= field.key %> ? 'check': 'close'"/>
-              </template>
-            </el-table-column>
-            <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'fixed')) { _%>
-            <el-table-column
-              label="<%= field.name %>">
-              <template slot-scope="scope">
-                <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
-                    <el-option
-                      v-for="item in <%= field.key %>Choices"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                    </el-option>
-                </el-select>
-              </template>
-            </el-table-column>
-            <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'api')) { _%>
-            <el-table-column
-              label="<%= field.name %>">
-              <template slot-scope="scope">
-                <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
-                    <el-option
-                      v-for="item in <%= field.key %>Choices"
-                      :key="item.id"
-                      :label="item.<%= field._label %>"
-                      :value="item.<%= field._value %>">
-                    </el-option>
-                </el-select>
-              </template>
-            </el-table-column>
-            <%_ } else if (field.type === 'image') { _%>
-            <el-table-column label="<%= field.name %>">
-              <template slot-scope="scope">
-                <img :src="scope.row.<%= field.key %>" style="width: 50px;">
-              </template>
-            </el-table-column>
-            <%_ } else if (field.type === 'file') { _%>
-            <el-table-column label="<%= field.name %>">
-              <template slot-scope="scope">
-                <a v-if="scope.row.<%= field.key %>" :href="scope.row.<%= field.key %>" target="_blank">点击下载</a>
-              </template>
-            </el-table-column>
-            <%_ } else { _%>
-            <el-table-column
-              prop="<%= field.key %>"
-              label="<%= field.name %>">
-            </el-table-column>
-            <%_ } _%>
-            <%_ } _%>
-          <%_ }) _%>
-          <el-table-column label="操作">
+      </el-row>
+      <el-row v-if="batchOptions.length > 0">
+        <el-form :inline="true" class="demo-form-inline">
+          <el-form-item label="批量">
+            <el-select v-model="batchOption" placeholder="请选择">
+              <el-option
+                v-for="item in batchOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="warning" @click="doBatchOption">执行</el-button>
+          </el-form-item>
+        </el-form>
+      </el-row>
+    </el-card>
+    <el-card>
+      <el-table
+        stripe
+        :height="tableHeight"
+        :data="dataList"
+        @selection-change="handleSelectionChange"
+        style="width: 100%">
+        <el-table-column
+          v-if="batchOptions.length > 0"
+          type="selection"
+          width="55">
+        </el-table-column>
+        <%_ fields.forEach(function(field){ _%>
+          <%_ if (field.read) { _%>
+          <%_ if (field.type === 'boolean') { _%>
+          <el-table-column label="<%= field.name %>">
             <template slot-scope="scope">
-              <el-button
-                v-if="config.editFlag"
-                size="mini"
-                @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-              <el-button
-                v-if="config.deleteFlag"
-                size="mini"
-                type="danger"
-                @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+              <d2-icon :name="scope.row.<%= field.key %> ? 'check': 'close'"/>
             </template>
           </el-table-column>
-        </el-table>
-        <el-pagination
-          background
-          layout="prev, pager, next"
-          :current-page.sync="page"
-          :page-size="pageSize"
-          @current-change="handleCurrentChange"
-          :total="total">
-        </el-pagination>
-      </el-card>
-    </div>
-
+          <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'fixed')) { _%>
+          <el-table-column
+            label="<%= field.name %>">
+            <template slot-scope="scope">
+              <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
+                  <el-option
+                    v-for="item in <%= field.key %>Choices"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                  </el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'api')) { _%>
+          <el-table-column
+            label="<%= field.name %>">
+            <template slot-scope="scope">
+              <el-select v-model="scope.row.<%= field.key %>" placeholder="请选择" disabled>
+                  <el-option
+                    v-for="item in <%= field.key %>Choices"
+                    :key="item.id"
+                    :label="item.<%= field._label %>"
+                    :value="item.<%= field._value %>">
+                  </el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <%_ } else if (field.type === 'image') { _%>
+          <el-table-column label="<%= field.name %>">
+            <template slot-scope="scope">
+              <img :src="scope.row.<%= field.key %>" style="width: 50px;">
+            </template>
+          </el-table-column>
+          <%_ } else if (field.type === 'file') { _%>
+          <el-table-column label="<%= field.name %>">
+            <template slot-scope="scope">
+              <a v-if="scope.row.<%= field.key %>" :href="scope.row.<%= field.key %>" target="_blank">点击下载</a>
+            </template>
+          </el-table-column>
+          <%_ } else { _%>
+          <el-table-column
+            prop="<%= field.key %>"
+            label="<%= field.name %>">
+          </el-table-column>
+          <%_ } _%>
+          <%_ } _%>
+        <%_ }) _%>
+        <el-table-column label="操作" width="150px">
+          <template slot-scope="scope">
+            <el-button
+              v-if="config.editFlag"
+              size="mini"
+              @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+            <el-button
+              v-if="config.deleteFlag"
+              size="mini"
+              type="danger"
+              @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        ref="pagination"
+        background
+        layout="prev, pager, next"
+        :current-page.sync="page"
+        :page-size="pageSize"
+        @current-change="handleCurrentChange"
+        :total="total">
+      </el-pagination>
+    </el-card>
   </d2-container>
 </template>
 <script>
 export default {
   data () {
     return {
+      tableHeight: 0,
       config: { searchFlag: false, editFlag: true, deleteFlag: true },
       dataList: [],
       total: 0,
@@ -134,7 +143,20 @@ export default {
       ],
       batchOption: '',
       multipleSelection: [],
-      search: '',
+      search: {
+        search_key: '',
+        filter_key: ''
+      },
+      searchOption: [
+      <%_ if (searchFilterOptions && searchFilterOptions.length > 0) { _%>
+        <%_ searchFilterOptions.forEach(function(item){ _%>
+        {
+          value: '<%= item.value %>',
+          label: '<%= item.label %>'
+        },
+        <%_ }) _%>
+      <%_ } _%>
+      ],
       <%_ fields.forEach(function(field){ _%>
       <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
       <%= field.key %>Choices: [
@@ -148,6 +170,14 @@ export default {
       <%_ } _%>
       <%_ }) _%>
     }
+  },
+  mounted () {
+    this.$nextTick(() => {
+      this.tableHeight = this.setTableHeight(this)
+      window.onresize = () => {
+        this.tableHeight = this.setTableHeight(this)
+      }
+    })
   },
   created () {
     this.getList()
@@ -189,6 +219,15 @@ export default {
     },
     handleSelectionChange (val) {
       this.multipleSelection = val
+    },
+    handleSearch () {
+      console.log(this.search)
+      // this.$axios({
+      //   method: 'get',
+      //   url: '/api/admin/userinfo/pay_count/',
+      // }).then(result => {
+      //   console.log(result)
+      // })
     },
     handleEdit (index, row) {
       const path = `${this.$route.path}/${row.id}/edit`
