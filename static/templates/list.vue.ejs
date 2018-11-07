@@ -1,18 +1,47 @@
 <template>
   <d2-container ref="container">
-    <el-card ref="searchBox" class="search-box" v-if="searchOption && searchOption.length">
+    <%_ if (searchList.length > 0) { _%>
+    <el-card ref="searchBox" class="search-box">
       <el-row>
-        <el-select v-model="search.filter_key" placeholder="请选择">
-          <el-option
-            v-for="item in searchOption"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-        <el-input placeholder="请输入内容" v-model="search.search_key">
-          <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
-        </el-input>
+        <el-form :inline="true">
+        <%_ searchList.forEach(function(searchItem){ _%>
+          <%_ if (searchItem.type === 'string' && searchItem._select_type === 'fixed') { _%>
+          <el-form-item label="<%= searchItem.name %>:">
+            <el-select v-model="search.<%= searchItem.key %>" clearable placeholder="<%= searchItem.name %>分类">
+              <el-option
+                v-for="item in <%= searchItem.key %>Choices"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <%_ } else if (searchItem.type === 'string' && searchItem._select_type === 'api') { _%>
+          <el-form-item label="<%= searchItem.name %>:"></el-form-item>
+            <el-select v-model="search.<%= searchItem.key %>" clearable placeholder="<%= searchItem.name %>分类">
+              <el-option
+                v-for="item in <%= searchItem.key %>Choices"
+                :key="item.id"
+                :label="item.<%= searchItem._label %>"
+                :value="item.<%= searchItem._value %>">
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <%_ } else if (searchItem.type === 'datetime') { _%>
+          <el-form-item label="<%= searchItem.name %>:">
+            <el-date-picker v-model="search.<%= searchItem.key %>__gte" type="datetime" placeholder="选择<%= searchItem.name %>">
+            </el-date-picker>
+          </el-form-item>
+          <%_ } else { _%>
+          <el-form-item label="<%= searchItem.name %>:">
+            <el-input placeholder="请输入<%= searchItem.name %>" v-model="search.<%= searchItem.key %>__icontains" clearable></el-input>
+          </el-form-item>
+          <%_ } _%>
+        <%_ }) _%>
+          <el-form-item>
+            <el-button type="primary" size="small" @click="getList()">搜索</el-button>
+          </el-form-item>
+        </el-form>
       </el-row>
       <el-row v-if="batchOptions.length > 0">
         <el-form :inline="true" class="demo-form-inline">
@@ -32,6 +61,7 @@
         </el-form>
       </el-row>
     </el-card>
+    <%_ } _%>
     <el-card>
       <el-table
         stripe
@@ -119,7 +149,7 @@
         background
         layout="prev, pager, next"
         :current-page.sync="page"
-        :page-size="pageSize"
+        :page-size="page_size"
         @current-change="handleCurrentChange"
         :total="total">
       </el-pagination>
@@ -134,7 +164,7 @@ export default {
       config: { searchFlag: false, editFlag: true, deleteFlag: true },
       dataList: [],
       total: 0,
-      pageSize: 20,
+      page_size: 20,
       page: 1,
       apiPath: '<%= apiPath %>',
       batchOptions: [
@@ -143,26 +173,13 @@ export default {
       ],
       batchOption: '',
       multipleSelection: [],
-      search: {
-        search_key: '',
-        filter_key: ''
-      },
-      searchOption: [
-      <%_ if (searchFilterOptions && searchFilterOptions.length > 0) { _%>
-        <%_ searchFilterOptions.forEach(function(item){ _%>
+      search: {},
+      <%_ searchList.forEach(function(searchItem){ _%>
+      <%_ if (searchItem.choices && searchItem.choices.length > 0) { _%>
+      <%= searchItem.key %>Choices: [
+        <%_ searchItem.choices.forEach(function(choice){ _%>
         {
-          value: '<%= item.value %>',
-          label: '<%= item.label %>'
-        },
-        <%_ }) _%>
-      <%_ } _%>
-      ],
-      <%_ fields.forEach(function(field){ _%>
-      <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
-      <%= field.key %>Choices: [
-        <%_ field.choices.forEach(function(choice){ _%>
-        {
-          value: <%- field.type === 'number' ? choice.value : `'${choice.value}'` %>,
+          value: <%- searchItem.type === 'number' ? choice.value : `'${choice.value}'` %>,
           label: '<%= choice.label %>'
         },
         <%_ }) _%>
@@ -173,14 +190,19 @@ export default {
   },
   mounted () {
     this.$nextTick(() => {
-      this.tableHeight = this.setTableHeight(this)
+      this.tableHeight = this.$op.setTableHeight(this)
       window.onresize = () => {
-        this.tableHeight = this.setTableHeight(this)
+        this.tableHeight = this.$op.setTableHeight(this)
       }
     })
   },
   created () {
     this.getList()
+    <%_ searchList.forEach(function(searchItem){ _%>
+    <%_ if (searchItem.choices && searchItem._select_type === 'api') { _%>
+    this.get<%= searchItem.key %>Choices()
+    <%_ } _%>
+    <%_ }) _%>
     <%_ fields.forEach(function(field){ _%>
     <%_ if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
     <%_ if (field._select_type === 'api') { _%>
@@ -190,7 +212,7 @@ export default {
       url: '<%= field._api_path %>',
       params: {
         page: 1,
-        pageSize: 500000 // 默认不分页
+        page_size: 500000 // 默认不分页
       }
     }).then(result => {
       this.<%= field.key %>Choices = result.results
@@ -200,13 +222,33 @@ export default {
     <%_ }) _%>
   },
   methods: {
-    getList (page) {
+    <%_ searchList.forEach(function(searchItem){ _%>
+    <%_ if (searchItem.choices && searchItem._select_type === 'api') { _%>
+    get<%= searchItem.key %>Choices () {
+      // get choices
+      this.$axios({
+        method: 'get',
+        url: '<%= searchItem._api_path %>',
+        params: {
+          page: 1,
+          page_size: 500000 // 默认不分页
+        }
+      }).then(result => {
+        this.<%= searchItem.key %>Choices = result.results
+      })
+    },
+    <%_ } _%>
+    <%_ }) _%>
+    getList (page = 1) {
+      this.page = page || this.page_size
+      let search = this.$op.changeSearch(this.search)
       this.$axios({
         method: 'get',
         url: this.apiPath,
         params: {
+          ...search,
           page: page || this.page,
-          pageSize: this.pageSize
+          page_size: this.page_size
         }
       }).then(result => {
         console.log('get list result', result)
@@ -219,15 +261,6 @@ export default {
     },
     handleSelectionChange (val) {
       this.multipleSelection = val
-    },
-    handleSearch () {
-      console.log(this.search)
-      // this.$axios({
-      //   method: 'get',
-      //   url: '/api/admin/userinfo/pay_count/',
-      // }).then(result => {
-      //   console.log(result)
-      // })
     },
     handleEdit (index, row) {
       const path = `${this.$route.path}/${row.id}/edit`

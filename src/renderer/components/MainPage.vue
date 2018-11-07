@@ -8,34 +8,18 @@
     </el-header>
     <el-main>
         <el-form ref="form" label-width="80px">
-          <el-form-item>
-            <!-- 自定义配置搜索 -->
-            <el-row>
-              列表页是否需要下拉框搜索<el-checkbox v-model="dataConfig.searchEnable" @change="searchEnableChange"></el-checkbox>
-            </el-row>
-            <el-row v-if="dataConfig.searchEnable">
-              <el-col :span="5">
-                <el-tag
-                  v-for="(item, index) in searchFilterOptions"
-                  :key="item.value"
-                  closable
-                  type=""
-                  @close="handleSearchClose(index)">
-                  {{item.label}}
-                </el-tag>
-              </el-col>
-              <el-col :span="3">
-                <el-input v-model="search.value" placeholder="值"></el-input>
-              </el-col>
-              <el-col :span="3">
-                <el-input v-model="search.label" placeholder="标签"></el-input>
-              </el-col>
-              <el-col :span="1">
-                <el-button type="primary" @click="addSearchFilterOption">增加</el-button>
-              </el-col>
-            </el-row>
-          </el-form-item>
-
+          <!-- 自定义配置搜索 -->
+          <el-row style="margin:0 0 20px 20px">
+            <el-col :span="6">
+              列表页是否需要搜索功能<el-checkbox v-model="dataConfig.searchEnable"></el-checkbox>              
+            </el-col>
+            <el-col :span="6">
+              字段值 驼峰式|连字符式 格式转换<el-checkbox @change="changeCamelCase"></el-checkbox>
+            </el-col>
+          </el-row>
+          <el-row>
+            <search-page v-if="dataConfig.searchEnable" @change="getSearchList"></search-page>
+          </el-row>
           <el-form-item>
             <el-row :gutter="20">
               <el-col :span="6">
@@ -140,16 +124,16 @@
   import d2Curd from '../utils/d2Crud'
   import creatHistory from '../utils/creatHistory'
   import draggable from 'vuedraggable'
+  import searchPage from './SearchPage.vue'
   const mysql = require('mysql')
 
   export default {
     components: {
-      draggable
+      draggable,
+      searchPage
     },
     data () {
       return {
-        search: {},
-        searchFilterOptions: [],
         currentPositon: '',
         config: null,
         connection: null,
@@ -166,6 +150,7 @@
           searchEnable: false
         },
         dataList: [],
+        searchList: [],
         typeOptions: [
           {value: 'string', label: '字符'},
           {value: 'text', label: '文本'},
@@ -211,6 +196,14 @@
       }
     },
     methods: {
+      changeCamelCase (value) {
+        this.dataList.map(item => {
+          item.key = this.$op.changeCamelCase(item.key)
+        })
+      },
+      getSearchList (data) {
+        this.searchList = data
+      },
       showTableSchema (tableName) {
         this.dataConfig.name = tableName
         this.dataConfig.title = tableName
@@ -224,11 +217,9 @@
           }
           this.columns = rows
           this.dataList = this.boxDataList(rows)
+          console.log(this.dataList)
           console.log('query', rows)
         })
-      },
-      searchEnableChange (value) {
-        this.searchFilterOptions = value ? this.searchFilterOptions : []
       },
       boxDataList (rows) {
         return rows.map(row => {
@@ -269,7 +260,7 @@
         //   return newData
         // })
         console.log('filterDataList', this.dataList)
-        d2Curd(filePath[0], this.dataConfig, this.dataList, this.searchFilterOptions)
+        d2Curd(filePath[0], this.dataConfig, this.dataList, this.searchList)
         creatHistory(this.dataConfig, this.dataList)
       },
       addOption (index) {
@@ -278,15 +269,6 @@
         this.dataList[index] = data
         data._value = ''
         data._label = ''
-      },
-      addSearchFilterOption () {
-        var search = Object.assign({}, this.search)
-        this.searchFilterOptions.push(search)
-        this.search = {}
-        console.log(this.searchFilterOptions)
-      },
-      handleSearchClose (index) {
-        this.searchFilterOptions.splice(index, 1)
       },
       handleSelectClose (data, index) {
         data.choices.splice(index, 1)

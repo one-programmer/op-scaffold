@@ -138,7 +138,7 @@ export default {
         <%_ field.choices.forEach(function(choice){ _%>
         {
           value: <%- field.type === 'number' ? choice.value : `'${choice.value}'` %>,
-          label: "<%= choice.label %>"
+          label: '<%= choice.label %>'
         },
         <%_ }) _%>
       ],
@@ -157,7 +157,7 @@ export default {
       url: '<%= field._api_path %>',
       params: {
         page: 1,
-        pageSize: 500000 // 默认不分页
+        page_size: 500000 // 默认不分页
       }
     }).then(result => {
       this.<%= field.key %>Choices = result.results

@@ -2,7 +2,7 @@ const ejs = require('ejs')
 const fs = require('fs')
 const path = require('path')
 
-export default (sourceDir, dataConfig, fields, searchFilterOptions) => {
+export default (sourceDir, dataConfig, fields, searchList) => {
   const { name, title, url } = dataConfig
   const options = { debug: true, compileDebug: true }
 
@@ -26,7 +26,7 @@ export default (sourceDir, dataConfig, fields, searchFilterOptions) => {
     })
   }
 
-  const data = {fields, templateData, apiPath: url, searchFilterOptions}
+  const data = {fields, templateData, apiPath: url, searchList}
 
   const renderTemplate = template => {
     ejs.renderFile(path.join(__static, `/templates/${template.type}.vue.ejs`), data, options, function (err, str) {
