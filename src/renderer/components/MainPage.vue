@@ -8,6 +8,18 @@
     </el-header>
     <el-main>
         <el-form ref="form" label-width="80px">
+          <!-- 自定义配置搜索 -->
+          <el-row style="margin:0 0 20px 20px">
+            <el-col :span="6">
+              列表页是否需要搜索功能<el-checkbox v-model="dataConfig.searchEnable"></el-checkbox>              
+            </el-col>
+            <el-col :span="6">
+              字段值 驼峰式|连字符式 格式转换<el-checkbox @change="changeCamelCase"></el-checkbox>
+            </el-col>
+          </el-row>
+          <el-row>
+            <search-page v-if="dataConfig.searchEnable" @change="getSearchList"></search-page>
+          </el-row>
           <el-form-item>
             <el-row :gutter="20">
               <el-col :span="6">
@@ -25,6 +37,9 @@
               <el-form-item v-for="(data, index) in dataList" :key="index">
                 <el-row :gutter="20">
                   <el-col :span="2">
+                    <i class="el-icon-close" @click="deleteDataItem(index)"></i>
+                  </el-col>
+                  <el-col :span="2">
                     <el-input v-model="data.key" placeholder="字段名"></el-input>
                   </el-col>
                   <el-col :span="3">
@@ -40,9 +55,10 @@
                       </el-option>
                     </el-select>
                   </el-col>
-                  <el-col :span="4">
+                  <el-col :span="5">
                     <el-checkbox v-if="dataConfig.listEnable" v-model="data.read">可读</el-checkbox>
                     <el-checkbox v-if="dataConfig.addEnable || dataConfig.editEnable" v-model="data.write">可写</el-checkbox>
+                    <el-checkbox v-if="data.type !== 'boolean' && data.write" v-model="data.require">必填</el-checkbox>
                   </el-col>
                   <el-col :span="5" v-if="data.type === 'number' || data.type === 'string'">
                     <el-tag
@@ -108,11 +124,13 @@
   import d2Curd from '../utils/d2Crud'
   import creatHistory from '../utils/creatHistory'
   import draggable from 'vuedraggable'
+  import searchPage from './SearchPage.vue'
   const mysql = require('mysql')
 
   export default {
     components: {
-      draggable
+      draggable,
+      searchPage
     },
     data () {
       return {
@@ -128,9 +146,11 @@
           title: '',
           listEnable: true,
           editEnable: true,
-          addEnable: true
+          addEnable: true,
+          searchEnable: false
         },
         dataList: [],
+        searchList: [],
         typeOptions: [
           {value: 'string', label: '字符'},
           {value: 'text', label: '文本'},
@@ -176,6 +196,14 @@
       }
     },
     methods: {
+      changeCamelCase (value) {
+        this.dataList.map(item => {
+          item.key = this.$op.changeCamelCase(item.key)
+        })
+      },
+      getSearchList (data) {
+        this.searchList = data
+      },
       showTableSchema (tableName) {
         this.dataConfig.name = tableName
         this.dataConfig.title = tableName
@@ -189,6 +217,7 @@
           }
           this.columns = rows
           this.dataList = this.boxDataList(rows)
+          console.log(this.dataList)
           console.log('query', rows)
         })
       },
@@ -211,6 +240,7 @@
             type: type,
             read: true,
             write,
+            require: true,
             choices: []
           }
         })
@@ -230,16 +260,21 @@
         //   return newData
         // })
         console.log('filterDataList', this.dataList)
-        d2Curd(filePath[0], this.dataConfig, this.dataList)
+        d2Curd(filePath[0], this.dataConfig, this.dataList, this.searchList)
         creatHistory(this.dataConfig, this.dataList)
       },
       addOption (index) {
         const data = this.dataList[index]
         data.choices.push({value: data._value, label: data._label})
         this.dataList[index] = data
+        data._value = ''
+        data._label = ''
       },
       handleSelectClose (data, index) {
         data.choices.splice(index, 1)
+      },
+      deleteDataItem (index) {
+        this.dataList.splice(index, 1)
       },
       addField () {
         this.dataList.push({
@@ -248,6 +283,7 @@
           type: '',
           read: true,
           write: true,
+          require: true,
           choices: []
         })
       }

@@ -1,16 +1,16 @@
 <template>
   <d2-container>
     <el-card>
-      <el-form :model="form" label-width="80px">
+      <el-form :model="form" :rules="rules" ref="form" label-width="80px">
         <%_ fields.forEach(function(field) { _%>
           <%_ if (field.write) { _%>
             <%_ if (field.type === 'datetime') { _%>
-            <el-form-item label="<%= field.name %>">
+            <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
               <el-date-picker v-model="form.<%= field.key %>" type="datetime" placeholder="选择日期时间">
               </el-date-picker>
             </el-form-item>
             <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'fixed')) { _%>
-            <el-form-item label="<%= field.name %>">
+            <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
               <el-select v-model="form.<%= field.key %>" placeholder="请选择<%= field.name %>">
                 <el-option
                   v-for="item in <%= field.key %>Choices"
@@ -21,7 +21,7 @@
               </el-select>
             </el-form-item>
             <%_ } else if (field.choices && (field.choices.length >= 0 && field._select_type === 'api')) { _%>
-            <el-form-item label="<%= field.name %>">
+            <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
               <el-select v-model="form.<%= field.key %>" placeholder="请选择<%= field.name %>">
                 <el-option
                   v-for="item in <%= field.key %>Choices"
@@ -32,15 +32,15 @@
               </el-select>
             </el-form-item>
             <%_ } else if (field.type === 'number') { _%>
-            <el-form-item label="<%= field.name %>">
-              <el-input-number v-model="form.<%= field.key %>" ></el-input-number>
+            <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
+              <el-input-number v-model="form.<%= field.key %>" :min="0"></el-input-number>
             </el-form-item>
             <%_ } else if (field.type === 'boolean') { _%>
             <el-form-item label="<%= field.name %>">
               <el-switch v-model="form.<%= field.key %>"></el-switch>
             </el-form-item>
             <%_ } else if (field.type === 'image') { _%>
-            <el-form-item label="<%= field.name %>">
+            <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
                 <el-upload
                   class="avatar-uploader"
                   action="/api/upload/"
@@ -51,7 +51,10 @@
                 </el-upload>
             </el-form-item>
             <%_ } else if (field.type === 'file') { _%>
-              <el-form-item label="<%= field.name %>">
+              <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
+                <el-input v-model="form.<%= field.key %>"></el-input>
+              </el-form-item>
+              <el-form-item label="">
                 <el-upload
                   class="upload-demo"
                   drag
@@ -60,6 +63,7 @@
                   :data="<%= field.key %>Data"
                   :file-list="<%= field.key %>FileList"
                   :before-upload="<%= field.key %>HandleBeforeUpload"
+                  :on-remove="<%= field.key %>HandleRemove"
                   :on-exceed="<%= field.key %>Exceed"
                   :on-success="<%= field.key %>UploadFile">
                   <i class="el-icon-upload"></i>
@@ -67,15 +71,22 @@
                 </el-upload>
             </el-form-item>
             <%_ } else if (field.type === 'content') { _%>
-              <el-form-item label="<%= field.name %>">
+              <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
                 <template>
                   <quill-editor :content="form.<%= field.key %>"
+                    @blur="<%= field.key %>EditorBlur($event)"
                     @change="<%= field.key %>EditorChange($event)">
                   </quill-editor>
                 </template>
             </el-form-item>
+            <%_ } else if (field.type === 'text') { _%>
+              <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
+                <template>
+                  <el-input type="textarea" v-model="form.<%= field.key %>"></el-input>
+                </template>
+            </el-form-item>
             <%_ } else { _%>
-            <el-form-item label="<%= field.name %>">
+            <el-form-item label="<%= field.name %>" prop="<%= field.key %>">
               <el-input v-model="form.<%= field.key %>"></el-input>
             </el-form-item>
             <%_ } _%>
@@ -83,7 +94,7 @@
         <%_ }) _%>
         <el-form-item>
           <el-button type="primary" @click="onSubmit">添加</el-button>
-          <el-button>取消</el-button>
+          <el-button @click="onCancel">取消</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -105,16 +116,29 @@ export default {
         <%_ } _%>
         <%_ }) _%>
       },
+      rules: {
+        <%_ fields.forEach(function(field) { _%>
+        <%_ if (field.write && field.type !== 'boolean' && field.require) { _%>
+        <%=  field.key %>: [
+          <%_ if (field.type === 'datetime' || field.type === 'image' || field.type === 'file') { _%>
+          {required: true, message: `请选择<%= field.name %>`, trigger: 'change'}
+          <%_ } else { _%>
+          {required: true, message: `请输入<%= field.name %>`, trigger: 'blur'}
+          <%_ } _%>
+        ],
+        <%_ } _%>
+        <%_ }) _%>
+      },
       <%_ fields.forEach(function(field) { _%>
       <%_ if (field.type === 'file') { _%>
       <%= field.key %>Data: {},
-      <%= field.key %>FileList: []
+      <%= field.key %>FileList: [],
       <%_ } else if (field.choices && (field.choices.length > 0 || field._select_type === 'api')) { _%>
       <%= field.key %>Choices: [
         <%_ field.choices.forEach(function(choice){ _%>
         {
           value: <%- field.type === 'number' ? choice.value : `'${choice.value}'` %>,
-          label: "<%= choice.label %>"
+          label: '<%= choice.label %>'
         },
         <%_ }) _%>
       ],
@@ -133,7 +157,7 @@ export default {
       url: '<%= field._api_path %>',
       params: {
         page: 1,
-        pageSize: 500000 // 默认不分页
+        page_size: 500000 // 默认不分页
       }
     }).then(result => {
       this.<%= field.key %>Choices = result.results
@@ -146,33 +170,55 @@ export default {
     async initForm () {
     },
     async onSubmit () {
-      console.log('submit!')
-      await this.$axios({
-        method: 'post',
-        url: `${this.apiPath}`,
-        data: this.form
+      this.$refs.form.validate(async (valid) => {
+        if (valid) {
+          console.log('submit!')
+          await this.$axios({
+            method: 'post',
+            url: `${this.apiPath}`,
+            data: this.form
+          })
+          this.$notify({
+            title: '成功',
+            message: `添加成功`,
+            type: 'success'
+          })
+          this.$router.push({ path: '<%= templateData.find(template => template.type === "list").path %>' })
+        } else {
+          console.log('error submit!!')
+          return false
+        }
       })
-      this.$notify({
-        title: '成功',
-        message: `添加成功`,
-        type: 'success'
+    },
+    onCancel () {
+      let routeName = this.$route.name
+      this.$store.commit('d2admin/page/close', {
+        tagName: routeName,
+        vm: this
       })
-      this.$router.push({ path: '<%= templateData.find(template => template.type === "list").path %>' })
     },
     <%_ fields.forEach(function(field) { _%> 
     <%_ if (field.type === 'image') { _%>
     <%= field.key %>Upload (res, file) {
       console.log('handleUploadSuccess', res, file)
       this.form.<%= field.key %> = res.results.url
+      this.$refs.form.clearValidate([`<%= field.key %>`])
     },
     <%_ } else if (field.type === 'content') { _%> 
     <%= field.key %>EditorChange ({ quill, html, text }) {
       this.form.<%= field.key %> = html
     },
+    <%= field.key %>EditorBlur ({ quill, html, text }) {
+      this.$refs.form.validateField(`<%= field.key %>`)
+    },
     <%_ } else if (field.type === 'file') { _%> 
     <%= field.key %>UploadFile (response, file, fileList) {
       console.log('<%= field.key %>UploadFile', response, file, fileList)
       this.form.<%= field.key %> = this.<%= field.key %>Data.url + response.key
+    },
+    <%= field.key %>HandleRemove (response, file, fileList) {
+      console.log('<%= field.key %>UploadFile', response, file, fileList)
+      this.form.<%= field.key %> = ''
     },
     async <%= field.key %>HandleBeforeUpload (file) {
       const result = await this.$axios({

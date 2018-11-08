@@ -8,6 +8,9 @@ import App from './App'
 import router from './router'
 import store from './store'
 
+import method from './utils/method'
+Vue.use(method)
+
 Vue.use(ElementUI)
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
