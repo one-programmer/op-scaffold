@@ -88,8 +88,7 @@
         searchList: [],
         typeOptions: [
           {value: 'string', label: '字符'},
-          {value: 'datetime', label: '日期'},
-          {value: 'datetimeRange', label: '日期范围'}
+          {value: 'datetime', label: '日期'}
         ]
       }
     },
