@@ -29,7 +29,7 @@ export default (sourceDir, dataConfig, fields, searchList) => {
   const data = {fields, templateData, apiPath: url, searchList}
 
   const renderTemplate = template => {
-    ejs.renderFile(path.join(__static, `/templates/${template.type}.vue.ejs`), data, options, function (err, str) {
+    ejs.renderFile(path.join(sourceDir, `.op/templates/${template.type}.vue.ejs`), data, options, function (err, str) {
       if (err) {
         console.log(`renderTemplate error. type: ${template.type}, err: ${err}`)
       }
