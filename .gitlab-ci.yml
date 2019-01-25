@@ -1,0 +1,23 @@
+variables:
+  IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}"
+  # FIXME: 注意！目前版本中，在引用目录下修改该端口号以免被占用
+  PORT: 13001
+
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  script:
+    - npm install
+    - npm run build:darwin
+  tags:
+    - dev
+    - shell
+  except:
+    - schedules
+  artifacts:
+    paths:
+      - build/
