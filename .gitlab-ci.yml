@@ -9,13 +9,14 @@ stages:
   - deploy
 
 build:
+  image: node:8
   stage: build
   script:
     - npm install
     - npm run build:darwin
   tags:
     - dev
-    - shell
+    - docker
   except:
     - schedules
   artifacts:
