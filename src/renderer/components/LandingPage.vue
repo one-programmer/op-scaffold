@@ -101,12 +101,11 @@
         db.get('histories').remove({id: itemId}).write()
         this.histories = db.get('histories').filter({projectId: this.projectId}).take(20).value()
       },
-      tabClick (item) {
-        if (item.index === '1') {
+      tabClick (tab) {
+        if (tab.index === '1') {
           const dataList = []
-          const itemId = require('uuid/v4')()
-          db.get('histories').push({ id: itemId, dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
-          this.goById(itemId)
+          const item = db.get('histories').insert({ dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
+          this.goById(item.id)
         }
       },
       doConnection () {
@@ -180,9 +179,8 @@
           }
           this.columns = rows
           const dataList = this.boxDataList(rows)
-          const itemId = require('uuid/v4')()
-          db.get('histories').push({ id: itemId, dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
-          this.goById(itemId)
+          const item = db.get('histories').insert({ dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
+          this.goById(item.id)
         })
       }
     }

@@ -168,7 +168,7 @@
       const { itemId, projectId } = this.$route.query
       this.itemId = itemId
       this.projectId = projectId
-      const item = db.get('histories').find({ id: this.itemId }).value()
+      const item = db.get('histories').getById(this.itemId).value()
       this.dataList = item.dataList
       this.dataConfig = item.dataConfig
     },
@@ -199,11 +199,11 @@
         })
       },
       genCode () {
-        const project = db.get('projects').find({ id: this.projectId }).value()
+        const project = db.get('projects').getById(this.projectId).value()
 
         console.log('filterDataList', this.dataList)
         d2Curd(project.path, this.dataConfig, this.dataList, this.searchList)
-        db.get('histories').find({ id: this.itemId }).assign({
+        db.get('histories').getById(this.itemId).assign({
           dataConfig: this.dataConfig,
           dataList: this.dataList
         })

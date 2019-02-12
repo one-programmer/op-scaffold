@@ -20,7 +20,6 @@
 </template>
 <script>
 import db from '../utils/db'
-const uuidv4 = require('uuid/v4')
 
 export default {
   data () {
@@ -42,8 +41,8 @@ export default {
       let project = projects.find({ path }).value()
       if (!project) {
         const dirName = path.substring(path.lastIndexOf('/') + 1)
-        project = { path, dirName, id: uuidv4() }
-        projects.push(project).write()
+        project = { path, dirName }
+        projects.insert(project).write()
       }
       this.doOpen(project)
     },
