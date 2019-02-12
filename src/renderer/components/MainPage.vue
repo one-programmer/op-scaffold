@@ -114,7 +114,7 @@
             <el-input v-model="dataConfig.url"></el-input>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="downloadJson">选择目录生成代码</el-button>
+            <el-button type="primary" @click="genCode">生成代码</el-button>
           </el-form-item>
         </el-form>
     </el-main>
@@ -133,6 +133,7 @@
     },
     data () {
       return {
+        projectId: null,
         itemId: null,
         currentPositon: '',
         config: null,
@@ -164,7 +165,9 @@
       }
     },
     created () {
-      this.itemId = this.$route.query.itemId
+      const { itemId, projectId } = this.$route.query
+      this.itemId = itemId
+      this.projectId = projectId
       const item = db.get('histories').find({ id: this.itemId }).value()
       this.dataList = item.dataList
       this.dataConfig = item.dataConfig
@@ -195,20 +198,16 @@
           console.log('query', rows)
         })
       },
-      downloadJson () {
-        const {dialog} = require('electron').remote
-        const filePath = dialog.showOpenDialog({properties: ['openDirectory']})
-        console.log('showSaveDialog', filePath)
-        if (!filePath) {
-          this.$message.error('请选择保存路径')
-          return
-        }
+      genCode () {
+        const project = db.get('projects').find({ id: this.projectId }).value()
+
         console.log('filterDataList', this.dataList)
-        d2Curd(filePath[0], this.dataConfig, this.dataList, this.searchList)
+        d2Curd(project.path, this.dataConfig, this.dataList, this.searchList)
         db.get('histories').find({ id: this.itemId }).assign({
           dataConfig: this.dataConfig,
           dataList: this.dataList
         })
+        this.$message.success(`生成成功！`)
       },
       addOption (index) {
         const data = this.dataList[index]
