@@ -11,4 +11,4 @@ thumbs.db
 !.gitkeep
 build.zip
 .project
-static/newSheet
+static/database.json

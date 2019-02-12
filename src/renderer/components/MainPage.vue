@@ -121,11 +121,10 @@
   </el-container>
 </template>
 <script>
+  import db from '../utils/db'
   import d2Curd from '../utils/d2Crud'
-  import creatHistory from '../utils/creatHistory'
   import draggable from 'vuedraggable'
   import searchPage from './SearchPage.vue'
-  const mysql = require('mysql')
 
   export default {
     components: {
@@ -134,6 +133,7 @@
     },
     data () {
       return {
+        itemId: null,
         currentPositon: '',
         config: null,
         connection: null,
@@ -164,36 +164,10 @@
       }
     },
     created () {
-      this.type = this.$route.query.type
-      if (this.type === 1 || this.type === 3) {
-        this.currentPositon = this.type === 1 ? 'JSON文件' : '历史记录'
-        let data = JSON.parse(this.$route.query.data)
-        this.dataList = data.dataList
-        this.dataConfig = data.dataConfig
-      } else if (this.type === 2) {
-        this.currentPositon = '新建'
-        this.dataList = []
-        this.dataConfig = {}
-      } else {
-        this.currentPositon = '数据库'
-        const configStr = localStorage.getItem('config')
-        this.config = JSON.parse(configStr)
-        const connection = mysql.createConnection(this.config)
-        // connect to mysql
-        connection.connect((err) => {
-          // in case of error
-          if (err) {
-            console.log(err.code)
-            console.log(err.fatal)
-            this.$message.error(`连接错误。错误码：${err.code}`)
-          } else {
-            console.log('connection sucess')
-            this.connection = connection
-            localStorage.setItem('config', JSON.stringify(this.config))
-            this.showTableSchema(this.$route.query.tableName)
-          }
-        })
-      }
+      this.itemId = this.$route.query.itemId
+      const item = db.get('histories').find({ id: this.itemId }).value()
+      this.dataList = item.dataList
+      this.dataConfig = item.dataConfig
     },
     methods: {
       changeCamelCase (value) {
@@ -221,30 +195,6 @@
           console.log('query', rows)
         })
       },
-      boxDataList (rows) {
-        return rows.map(row => {
-          const key = row.Field
-          const rowType = row.Type
-          let write = row.Key !== 'PRI'
-          let type = 'string'
-          if (rowType.startsWith('int') || rowType.startsWith('bigint')) {
-            type = 'number'
-          } else if (rowType.startsWith('timestamp') || rowType.startsWith('datetime')) {
-            type = 'datetime'
-          } else if (rowType.startsWith('tinyint')) {
-            type = 'boolean'
-          }
-          return {
-            key: key,
-            name: row.Comment,
-            type: type,
-            read: true,
-            write,
-            require: true,
-            choices: []
-          }
-        })
-      },
       downloadJson () {
         const {dialog} = require('electron').remote
         const filePath = dialog.showOpenDialog({properties: ['openDirectory']})
@@ -253,15 +203,12 @@
           this.$message.error('请选择保存路径')
           return
         }
-        // const filterDataList = this.dataList.map(data => {
-        //   const keys = Object.keys(data).filter(key => !key.startsWith('_'))
-        //   const newData = {}
-        //   keys.forEach(key => { newData[key] = data[key] })
-        //   return newData
-        // })
         console.log('filterDataList', this.dataList)
         d2Curd(filePath[0], this.dataConfig, this.dataList, this.searchList)
-        creatHistory(this.dataConfig, this.dataList)
+        db.get('histories').find({ id: this.itemId }).assign({
+          dataConfig: this.dataConfig,
+          dataList: this.dataList
+        })
       },
       addOption (index) {
         const data = this.dataList[index]

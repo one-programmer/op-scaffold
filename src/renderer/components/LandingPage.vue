@@ -5,9 +5,11 @@
         <el-menu :default-openeds="['1']">
           <el-submenu index="1">
             <template slot="title">快速选择</template>
-            <el-menu-item v-if="histories.length" v-for="(table, index) in histories" :key="index" :index="`1-${index}`" @click="showTableSchema(table)">{{ table }}
-              <i class="el-icon-close" @click.stop="deleteHistory(table, index)"></i>
-            </el-menu-item>
+            <div v-if="histories.length > 0">
+              <el-menu-item  v-for="(item, index) in histories" :key="index" :index="`1-${index}`" @click="goById(item.id)">{{ item.dataConfig.name }}
+                <i class="el-icon-close" @click.stop="deleteById(item.id)"></i>
+              </el-menu-item>
+            </div>
             <el-menu-item v-if="!histories.length" :key="0" :index="`1-0`" >暂无记录</el-menu-item>
           </el-submenu>
         </el-menu>
@@ -38,19 +40,6 @@
               </el-form>
             </el-main>
           </el-tab-pane>
-          <el-tab-pane label="JSON文件" name="JSON">
-            <el-upload
-              class="upload-demo"
-              drag
-              accept="application/json"
-              action="https://jsonplaceholder.typicode.com/posts/"
-              :on-success="jsonUpload"
-              multiple>
-              <i class="el-icon-upload"></i>
-              <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-              <div class="el-upload__tip" slot="tip">只能上传json文件</div>
-            </el-upload>
-          </el-tab-pane>
           <el-tab-pane label="新建" name="NEW"></el-tab-pane>
         </el-tabs>
       </el-main>
@@ -60,13 +49,14 @@
       :visible.sync="dialogVisible"
       width="30%">
       <ul class="table-box">
-        <li v-for="item in tables" :key="item" @click="showDB(item)">{{item}}</li>
+        <li v-for="item in tables" :key="item" @click="goByTable(item)">{{item}}</li>
       </ul>
     </el-dialog>
   </div>
 </template>
 <script>
-  import {getHistories, deleteHistory, getTableData} from '../utils/creatHistory.js'
+  import db from '../utils/db'
+
   const mysql = require('mysql')
   export default {
     name: 'landing-page',
@@ -85,23 +75,38 @@
         },
         urlData: {},
         urlFileList: [],
-        histories: []
+        histories: [],
+        dataConfig: {
+          name: '',
+          url: '',
+          title: '',
+          listEnable: true,
+          editEnable: true,
+          addEnable: true,
+          searchEnable: false
+        },
+        projectId: null
       }
     },
     created () {
+      this.projectId = this.$route.query.projectId
       this.config = localStorage.getItem('config') ? JSON.parse(localStorage.getItem('config')) : this.config
-      this.histories = getHistories()
+      this.histories = db.get('histories').filter({projectId: this.projectId}).take(20).value()
     },
     methods: {
       open (link) {
         this.$electron.shell.openExternal(link)
       },
-      deleteHistory (table, index) {
-        deleteHistory(table, index)
+      deleteById (itemId) {
+        db.get('histories').remove({id: itemId}).write()
+        this.histories = db.get('histories').filter({projectId: this.projectId}).take(20).value()
       },
       tabClick (item) {
-        if (item.index === '2') {
-          this.$router.push({name: 'main-page', query: {type: 2}})
+        if (item.index === '1') {
+          const dataList = []
+          const itemId = require('uuid/v4')()
+          db.get('histories').push({ id: itemId, dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
+          this.goById(itemId)
         }
       },
       doConnection () {
@@ -135,16 +140,50 @@
           this.dialogVisible = true
         })
       },
-      showTableSchema (tabel) {
-        let data = getTableData(tabel)
-        this.$router.push({name: 'main-page', query: {type: 3, data: data}})
+      goById (itemId) {
+        this.$router.push({name: 'main-page', query: { itemId, projectId: this.projectId }})
       },
-      showDB (item) {
-        this.$router.push({name: 'main-page', query: {type: 0, tableName: item}})
+      boxDataList (rows) {
+        return rows.map(row => {
+          const key = row.Field
+          const rowType = row.Type
+          let write = row.Key !== 'PRI'
+          let type = 'string'
+          if (rowType.startsWith('int') || rowType.startsWith('bigint')) {
+            type = 'number'
+          } else if (rowType.startsWith('timestamp') || rowType.startsWith('datetime')) {
+            type = 'datetime'
+          } else if (rowType.startsWith('tinyint')) {
+            type = 'boolean'
+          }
+          return {
+            key: key,
+            name: row.Comment,
+            type: type,
+            read: true,
+            write,
+            require: true,
+            choices: []
+          }
+        })
       },
-      jsonUpload (res, file) {
-        let data = getTableData(file.raw.path)
-        this.$router.push({name: 'main-page', query: {type: 1, data: data}})
+      goByTable (tableName) {
+        this.dataConfig.name = tableName
+        this.dataConfig.title = tableName
+        this.dataConfig.url = `/api/admin/${tableName}/`
+        const query = `show full columns from ${tableName};`
+        this.connection.query(query, (err, rows, fields) => {
+          if (err) {
+            console.log(err.code)
+            console.log(err.fatal)
+            this.$message.error(`连接错误。错误码：${err.code}`)
+          }
+          this.columns = rows
+          const dataList = this.boxDataList(rows)
+          const itemId = require('uuid/v4')()
+          db.get('histories').push({ id: itemId, dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
+          this.goById(itemId)
+        })
       }
     }
   }
