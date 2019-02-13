@@ -104,15 +104,11 @@
               </el-form-item>
             </transition-group>
           </draggable>
-          <el-form-item label="名称">
-            <el-input v-model="dataConfig.name"></el-input>
-          </el-form-item>
-          <el-form-item label="标题">
-            <el-input v-model="dataConfig.title"></el-input>
-          </el-form-item>
-          <el-form-item label="接口地址">
-            <el-input v-model="dataConfig.url"></el-input>
-          </el-form-item>
+          <div v-for="(item, key) in projectConfig" :key="key">
+            <el-form-item :label="item.label">
+              <el-input v-model="item.value"></el-input>
+            </el-form-item>
+          </div>
           <el-form-item>
             <el-button type="primary" @click="genCode">生成代码</el-button>
           </el-form-item>
@@ -161,7 +157,9 @@
           {value: 'image', label: '图片'},
           {value: 'file', label: '文件'},
           {value: 'content', label: '富文本编辑'}
-        ]
+        ],
+        projectConfig: null,
+        project: null
       }
     },
     created () {
@@ -171,6 +169,9 @@
       const item = db.get('histories').getById(this.itemId).value()
       this.dataList = item.dataList
       this.dataConfig = item.dataConfig
+      this.projectConfig = item.projectConfig
+
+      this.project = db.get('projects').getById(this.projectId).value()
     },
     methods: {
       changeCamelCase (value) {
@@ -199,14 +200,13 @@
         })
       },
       genCode () {
-        const project = db.get('projects').getById(this.projectId).value()
-
         console.log('filterDataList', this.dataList)
-        d2Curd(project.path, this.dataConfig, this.dataList, this.searchList)
+        d2Curd(this.project.path, this.dataConfig, this.dataList, this.searchList, this.projectConfig)
         db.get('histories').getById(this.itemId).assign({
           dataConfig: this.dataConfig,
-          dataList: this.dataList
-        })
+          dataList: this.dataList,
+          projectConfig: this.projectConfig
+        }).write()
         this.$message.success(`生成成功！`)
       },
       addOption (index) {

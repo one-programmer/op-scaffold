@@ -56,6 +56,9 @@
 </template>
 <script>
   import db from '../utils/db'
+  import { getDataFromFilePath } from '../utils'
+
+  const path = require('path')
 
   const mysql = require('mysql')
   export default {
@@ -85,11 +88,13 @@
           addEnable: true,
           searchEnable: false
         },
-        projectId: null
+        projectId: null,
+        project: null
       }
     },
     created () {
       this.projectId = this.$route.query.projectId
+      this.project = db.get('projects').getById(this.projectId).value()
       this.config = localStorage.getItem('config') ? JSON.parse(localStorage.getItem('config')) : this.config
       this.histories = db.get('histories').filter({projectId: this.projectId}).take(20).value()
     },
@@ -179,7 +184,9 @@
           }
           this.columns = rows
           const dataList = this.boxDataList(rows)
-          const item = db.get('histories').insert({ dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
+
+          const projectConfig = getDataFromFilePath(path.join(this.project.path, '.op/projectConfig.json'))
+          const item = db.get('histories').insert({ dataConfig: this.dataConfig, projectConfig, projectId: this.projectId, dataList }).write()
           this.goById(item.id)
         })
       }
