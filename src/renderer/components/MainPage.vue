@@ -202,6 +202,9 @@
       genCode () {
         console.log('filterDataList', this.dataList)
         d2Curd(this.project.path, this.dataConfig, this.dataList, this.searchList, this.projectConfig)
+
+        this.dataConfig.name = this.dataConfig.name || this.projectConfig.name.label
+
         db.get('histories').getById(this.itemId).assign({
           dataConfig: this.dataConfig,
           dataList: this.dataList,
@@ -226,7 +229,7 @@
         this.dataList.push({
           key: '',
           name: '',
-          type: '',
+          type: 'string',
           read: true,
           write: true,
           require: true,

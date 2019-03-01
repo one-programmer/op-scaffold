@@ -109,7 +109,8 @@
       tabClick (tab) {
         if (tab.index === '1') {
           const dataList = []
-          const item = db.get('histories').insert({ dataConfig: this.dataConfig, projectId: this.projectId, dataList }).write()
+          const projectConfig = getDataFromFilePath(path.join(this.project.path, '.op/projectConfig.json'))
+          const item = db.get('histories').insert({ dataConfig: this.dataConfig, projectConfig, projectId: this.projectId, dataList }).write()
           this.goById(item.id)
         }
       },
